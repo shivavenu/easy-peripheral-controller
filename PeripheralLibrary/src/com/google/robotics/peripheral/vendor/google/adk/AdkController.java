@@ -83,7 +83,7 @@ public abstract class AdkController extends Controller {
   public void onDisconnected() {
     
 
-	  mConnected = false;
+    mConnected = false;
 	    
 	if (callbackHandler != null) {
       callbackHandler.sendEmptyMessage(DISCONNECTED);
@@ -91,7 +91,8 @@ public abstract class AdkController extends Controller {
     
     if (mConnector != null) {
     	Log.d(TAG, "disconnecting the peripheral connector");
-    	mConnector.disconnected(this);
+    	// TODO (*arshan) this might have to come back.
+    	mConnector.disconnect();
     }
     // cheap hack, but causes the demokit to exit, which allows
     // a nice clean one on the next round.

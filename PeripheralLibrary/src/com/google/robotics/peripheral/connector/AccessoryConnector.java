@@ -17,159 +17,161 @@ import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 /**
- * Considered implementing this as a Service of some sort, but since the 
- * underlying usbaccesssory is already a service seemed unneccessary to 
- * layer another on top. This is simply a utility that deals with the 
- * usbaccessory service in the context of the Peripheral Library.
+ * Considered implementing this as a Service of some sort, but since the
+ * underlying usbaccesssory is already a service seemed unneccessary to layer
+ * another on top. This is simply a utility that deals with the usbaccessory
+ * service in the context of the Peripheral Library.
  * 
  * @author arshan
- *
+ * 
  */
 public class AccessoryConnector implements PeripheralConnector {
 
-	private static final String TAG = "AccessoryWrapper";
+  private static final String TAG = "AccessoryWrapper";
 
-	// Intents
-	private PendingIntent mPermissionIntent;
-	private boolean mPermissionRequestPending;
-	private String mUsbPermissionString;
+  // Intents
+  private PendingIntent mPermissionIntent;
+  private boolean mPermissionRequestPending;
+  private String mUsbPermissionString;
 
-	// Usb accessory classes;
-	private UsbManager mUsbManager;
-	UsbAccessory mAccessory;
+  private ConnectionListener mListener;
 
-	// IO
-	ParcelFileDescriptor mFileDescriptor = null;
-	FileInputStream mInputStream;
-	FileOutputStream mOutputStream;
+  // Usb accessory classes
+  private UsbManager mUsbManager;
+  UsbAccessory mAccessory;
 
-	Context mContext;
-	
-	private boolean mExitOnDetach = true;
-	
-	public AccessoryConnector(Context context, String acc_string) {
-		mContext = context;
-		mUsbManager = (UsbManager) mContext.getSystemService(Context.USB_SERVICE);
-		setAccessoryString(acc_string);
-	}
-	
+  // IO
+  ParcelFileDescriptor mFileDescriptor = null;
+  FileInputStream mInputStream;
+  FileOutputStream mOutputStream;
 
-	public void setAccessoryString(String str) {
-		mUsbPermissionString = str + ".action.USB_PERMISSION";
-	}
+  Context mContext;
 
-	public UsbAccessory getAccessory() {
-		// First, see if there are any accessories attached at all.
-		UsbAccessory[] accessories = mUsbManager.getAccessoryList();
-		return (accessories == null ? null : accessories[0]);
-	}
+  public AccessoryConnector(Context context, String acc_string, ConnectionListener listener) {
+    mContext = context;
+    mUsbManager = (UsbManager) mContext.getSystemService(Context.USB_SERVICE);
+    mListener = listener;
+    setAccessoryString(acc_string);
+  }
 
-	public boolean isConnected() {
-		return mFileDescriptor != null;
-	}
-	
-	
-	public boolean connect() {
+  public void setAccessoryString(String str) {
+    mUsbPermissionString = str + ".action.USB_PERMISSION";
+  }
 
-		mAccessory = getAccessory();
-		if (mAccessory == null) {
-			return false;
-		}
+  private UsbAccessory getAccessory() {
+    // First, see if there are any accessories attached at all.
+    UsbAccessory[] accessories = mUsbManager.getAccessoryList();
+    return (accessories == null ? null : accessories[0]);
+  }
 
-		if (mUsbManager.hasPermission(mAccessory)) {
-			closeIO();
-			openIO(mAccessory);
-		} else {
-			mPermissionIntent = PendingIntent.getBroadcast(
-					mContext, 0, new Intent(mUsbPermissionString), 0);
-			// Fires a dialog to get permission from the user. Result will come
-			// back to the mUsbReceiver.
-			synchronized (mUsbReceiver) {
-				if (!mPermissionRequestPending) {
-					mUsbManager.requestPermission(mAccessory, mPermissionIntent);
-					mPermissionRequestPending = true;
-				}
-			}
-		}
+  public boolean isConnected() {
+    return mFileDescriptor != null;
+  }
 
-		return mAccessory == null;
-	}
 
-	public void disconnect() {
-		closeIO();
-	}
-	
-	private void openIO(UsbAccessory accessory) {
-		Log.d(TAG, "openAccessory: " + accessory);
-		mFileDescriptor = mUsbManager.openAccessory(accessory);
-		if (mFileDescriptor != null) {
-			FileDescriptor fd = mFileDescriptor.getFileDescriptor();
-			mInputStream = new FileInputStream(fd);
-			mOutputStream = new FileOutputStream(fd);
-			Log.d(TAG, "openAccessory succeeded");
-		} else {
-			Log.d(TAG, "openAccessory fail");
-			if (accessory.getManufacturer() == null) {
-				throw new RuntimeException("Appears to be hung on the usb accessory handle");
-			}
-		}
-	}
+  public void connect() {
 
-	public void closeIO() {
-		try {
-			if (mFileDescriptor != null) {
-				mFileDescriptor.close();
-			}
-		} catch (IOException e) {
-		} finally {
-			mFileDescriptor = null;
-			mInputStream = null;
-			mOutputStream = null;
-		}
-	}
+    if (isConnected()) {
+      Log.d(TAG, "already connected");
+      mListener.Connected(mAccessory);
+      return;
+    }
 
-	public FileOutputStream getOutputStream() {
-		return mOutputStream;
-	}
-	
-	public FileInputStream getInputStream() {
-		return mInputStream;
-	}
-	
-	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			String action = intent.getAction();
-			if (mUsbPermissionString.equals(action)) {
-				synchronized (this) {
-					UsbAccessory accessory = mUsbManager.getAccessoryList()[0];
-					if (intent.getBooleanExtra(
-							UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-						openIO(accessory);
-					} else {
-						Log.d(TAG, "permission denied for accessory "
-								+ accessory);
-					}
-					mPermissionRequestPending = false;
-				}
-			} else if (UsbManager.ACTION_USB_ACCESSORY_DETACHED.equals(action)) {
-				Log.d(TAG, "detach");
-				closeIO();
-				if (mUsbReceiver != null) {
-					mContext.unregisterReceiver(mUsbReceiver);
-				}
-				
-				if (mExitOnDetach) {
-					// This is a hack to deal with bad tear down badness.
-				//	System.exit(0); 
-				}
+    mAccessory = getAccessory();
+    if (mAccessory == null) {
+      mListener.ConnectionFailed(null);
+      return;
+    }
 
-			}
-		}
-	};
+    if (mUsbManager.hasPermission(mAccessory)) {
+      closeIO();
+      openIO(mAccessory);
+    } else {
+      mPermissionIntent =
+          PendingIntent.getBroadcast(mContext, 0, new Intent(mUsbPermissionString), 0);
+      // Fires a dialog to get permission from the user. Result will come
+      // back to the mUsbReceiver.
+      synchronized (mUsbReceiver) {
+        if (!mPermissionRequestPending) {
+          mUsbManager.requestPermission(mAccessory, mPermissionIntent);
+          mPermissionRequestPending = true;
+        }
+      }
+    }
+  }
 
-	public void disconnected(Controller demoKit) {
-		disconnect();
-	}
+  public void disconnect() {
+    mListener.Disconnected();
+    closeIO();
+  }
 
+  public FileOutputStream getOutputStream() {
+    return mOutputStream;
+  }
+
+  public FileInputStream getInputStream() {
+    return mInputStream;
+  }
+
+
+  private void openIO(UsbAccessory accessory) {
+    Log.d(TAG, "openAccessory: " + accessory);
+    mFileDescriptor = mUsbManager.openAccessory(accessory);
+    if (mFileDescriptor != null) {
+      FileDescriptor fd = mFileDescriptor.getFileDescriptor();
+      mInputStream = new FileInputStream(fd);
+      mOutputStream = new FileOutputStream(fd);
+      mListener.Connected(accessory);
+      Log.d(TAG, "openAccessory succeeded");
+    } else {
+      mListener.ConnectionFailed(accessory);
+      Log.d(TAG, "openAccessory fail");
+      if (accessory.getManufacturer() == null) {
+        throw new RuntimeException("Appears to be hung on the usb accessory handle");
+      }
+    }
+  }
+
+  /*
+   * Close all objects having to do with the connection to the filesystem.
+   */
+  private void closeIO() {
+
+    try {
+      if (mFileDescriptor != null) {
+        mFileDescriptor.close();
+      }
+    } catch (IOException e) {
+    } finally {
+      mFileDescriptor = null;
+      mInputStream = null;
+      mOutputStream = null;
+    }
+
+  }
+
+  private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+      String action = intent.getAction();
+      if (mUsbPermissionString.equals(action)) {
+        synchronized (this) {
+          UsbAccessory accessory = mUsbManager.getAccessoryList()[0];
+          if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+            openIO(accessory);
+          } else {
+            Log.d(TAG, "permission denied for accessory " + accessory);
+            mListener.ConnectionFailed(accessory);
+          }
+          mPermissionRequestPending = false;
+        }
+      } else if (UsbManager.ACTION_USB_ACCESSORY_DETACHED.equals(action)) {
+        Log.d(TAG, "detach");
+        if (mUsbReceiver != null) {
+          mContext.unregisterReceiver(mUsbReceiver);
+        }
+        disconnect();
+      }
+    }
+  };
 }
