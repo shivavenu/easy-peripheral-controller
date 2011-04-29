@@ -32,7 +32,7 @@ public class ServoExample extends Activity {
 
   /** Called when the activity is first created.; */
   @Override
-  public void onCreate(Bundle savedInstanceState) {
+  public void onCreate(Bundle savedInstanceState) { 
 
     super.onCreate(savedInstanceState);
 
@@ -49,12 +49,6 @@ public class ServoExample extends Activity {
     super.onResume();
   }
 
-  /**
-   * Attempt to connect to the accessory board, will put up a toast if the
-   * accessory is not available.
-   * 
-   * @param view
-   */
   public void connect(View view) {
     connector.connect();
   }
