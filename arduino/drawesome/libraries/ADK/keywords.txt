@@ -1,0 +1,3 @@
+ADK	KEYWORD1
+init	KEYWORD2
+checkForInput	KEYWORD2
