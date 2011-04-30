@@ -8,8 +8,8 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.hardware.usb.UsbAccessory;
 import android.os.Bundle;
-import android.speech.tts.TextToSpeech;
-import android.speech.tts.TextToSpeech.OnInitListener;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -18,7 +18,10 @@ import android.widget.Toast;
 
 import com.google.robotics.peripheral.connector.AccessoryConnector;
 import com.google.robotics.peripheral.connector.ConnectionListener;
+import com.google.robotics.peripheral.device.Joystick;
+import com.google.robotics.peripheral.device.LightSensor;
 import com.google.robotics.peripheral.vendor.google.DemoKit;
+import com.google.robotics.peripheral.vendor.google.adk.AdkLightSensor;
 
 public class ServoExample extends Activity {
   public static final String TAG = "ServoExample";
@@ -98,18 +101,15 @@ public class ServoExample extends Activity {
       canvas.drawText(text, 50, 50, mainText);
       canvas.drawCircle(lastTouch.x, lastTouch.y, 30, mainText);
     }
-
-    public boolean onTouch(View view, MotionEvent event) {
-      // if(event.getAction() != MotionEvent.ACTION_DOWN)
-      // return super.onTouchEvent(event);
-
-      lastTouch.x = (int) event.getX();
-      lastTouch.y = (int) event.getY();
+    
+    public void moveIt(int x , int y) {
+      lastTouch.x = x;
+      lastTouch.y = y;
 
       text = "touched " + lastTouch.x + " x " + lastTouch.y;
 
       invalidate();
-
+      
       if (adk == null) {
         connect(null);
       } else {
@@ -122,6 +122,15 @@ public class ServoExample extends Activity {
         adk.getLed(0).setBlue((int) (255 * xfactor));
         adk.getLed(2).setGreen((int) (255 * yfactor));
       }
+    }
+
+    public boolean onTouch(View view, MotionEvent event) {
+      // if(event.getAction() != MotionEvent.ACTION_DOWN)
+      // return super.onTouchEvent(event);
+
+      moveIt((int) event.getX(), (int) event.getY());
+    
+    
       return true;
     }
   }
@@ -140,6 +149,12 @@ public class ServoExample extends Activity {
        */
       // adk.getServo(0).setBounds(600, 240);
       adk.getRelay(0).setValue(true); // if we want to use for on switch.
+      
+      ((AdkLightSensor)(adk.getLightSensor())).registerHandler(lightSensor);
+      adk.getJoystick().registerHandler(new JoystickHandler(mTestView));
+//      ((AdkJoystick)(adk.getJoystick())).registerHandler(joystick);
+      // .registerHandler(lightSensor);
+      
     }
 
     @Override
@@ -149,12 +164,35 @@ public class ServoExample extends Activity {
 
     @Override
     public void Disconnected() {
-     
-        adk = null;
-      
+      adk = null;
       logIt("disconnected");
     }
-
+    
+  };
+  
+  Handler lightSensor = new Handler() {
+    public void handleMessage(Message msg) {
+      LightSensor sensor = (LightSensor)(msg.obj);
+      if (adk != null) {
+        int val = sensor.getLux() >> 3;
+        adk.getLed(1).setColor(val, val, val);
+      
+      }
+    }
+  };
+  
+  public class JoystickHandler extends Handler {
+    TestView mView;
+    
+    public JoystickHandler(TestView view) {
+      mView = view;
+    }
+    public void handleMessage(Message msg) {      
+      Joystick jstick = (Joystick)(msg.obj);
+      mView.moveIt((int)(jstick.getX()*1280), (int)(jstick.getY()*960));
+      Log.d(TAG, "jstick : " + jstick.getX() + "x" + jstick.getY());
+      mView.invalidate();
+    }
   };
 
   // Utility methods.

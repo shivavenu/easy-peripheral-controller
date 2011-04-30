@@ -6,7 +6,7 @@ package com.google.robotics.peripheral.device;
  * @author arshan@google.com (Your Name Here)
  *
  */
-public interface Joystick {
+public interface Joystick extends ChangeNotifier {
 
   /**
    * Returns the X position of the joystick as a float from 0 to 1. 

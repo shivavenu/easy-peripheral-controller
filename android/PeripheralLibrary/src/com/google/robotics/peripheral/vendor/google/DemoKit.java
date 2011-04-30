@@ -239,10 +239,7 @@ public class DemoKit extends AdkController implements Runnable {
 
         case MESSAGE_JOY:
           JoyMsg j = (JoyMsg) msg.obj;          
-         //  Log.d(TAG, "Setting joystick to " + j.getX() + "x" + j.getY());
-          joystick.setX(j.getX());
-          joystick.setY(j.getY());          
-         // Log.d(TAG, "SET joystick to " + joystick.getX() + "x" + joystick.getY());
+          joystick.setPosition(j.getX(), j.getY());
           break;
 
       }
