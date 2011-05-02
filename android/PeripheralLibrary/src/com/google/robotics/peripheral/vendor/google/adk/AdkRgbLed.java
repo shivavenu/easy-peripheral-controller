@@ -17,15 +17,12 @@ public class AdkRgbLed extends AdkMessage implements RgbLed{
     private AdkLed green;
     private AdkLed blue;
     
-    public AdkRgbLed(AdkController controller) {
+    public AdkRgbLed(DemoKit controller) {
       red = new AdkLed(controller);
       green = new AdkLed(controller);
       blue = new AdkLed(controller);   
       
       // Note that we do not register this module.
-      controller.register(red);
-      controller.register(green);
-      controller.register(blue);
     }
         
     @Override 

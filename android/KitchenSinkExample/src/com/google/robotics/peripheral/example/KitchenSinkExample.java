@@ -20,10 +20,9 @@ import com.google.robotics.peripheral.connector.AccessoryConnector;
 import com.google.robotics.peripheral.connector.ConnectionListener;
 import com.google.robotics.peripheral.device.Joystick;
 import com.google.robotics.peripheral.device.LightSensor;
-import com.google.robotics.peripheral.vendor.google.DemoKit;
-import com.google.robotics.peripheral.vendor.google.adk.AdkLightSensor;
+import com.google.robotics.peripheral.vendor.google.adk.DemoKit;
 
-public class ServoExample extends Activity {
+public class KitchenSinkExample extends Activity {
   public static final String TAG = "ServoExample";
 
   private volatile Point lastTouch = new Point(500,500);
@@ -79,13 +78,6 @@ public class ServoExample extends Activity {
       mainText.setAntiAlias(true);
       mainText.setStrokeWidth(6);
       text = "no  touchy";
-    }
-
-
-
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-
     }
 
     @Override

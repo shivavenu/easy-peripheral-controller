@@ -35,10 +35,6 @@ public abstract class AdkController extends Controller {
   OutputStream mOutputStream;
   
   protected boolean mConnected = false;
-  
-  List<AdkMessage> controlledDevices = new LinkedList<AdkMessage>();
-  private final Object controlledDevicesLock;
-  DeviceSync dSync;
 
   private Handler callbackHandler;
   
@@ -51,13 +47,9 @@ public abstract class AdkController extends Controller {
   
   public AdkController(InputStream in,
                        OutputStream out) {
-    controlledDevicesLock = new Object(); 
     mInputStream = in;
-    mOutputStream = out;
-    
-    dSync = new DeviceSync();
-    dSync.start();
-    
+    mOutputStream = out;    
+   
     mConnected = true;
   }
  
@@ -94,100 +86,13 @@ public abstract class AdkController extends Controller {
     	mConnector.disconnect();
     }   
   }
-  
- 
-  
-  public void onDestroy() {
-    Log.d(TAG, "ADK Destroyed");
-   
-    try {
-      if (dSync != null ) {
-        dSync.join();
-      }
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-  }
 
+  public void onDestroy() {
+    onDisconnected();
+    Log.d(TAG, "ADK Destroyed");
+  }
 
   public boolean isConnected() {
     return mConnected;
   }
-
-  public void register(AdkMessage device) {
-    synchronized (controlledDevicesLock) {
-      controlledDevices.add(device);
-    }    
-  }
- 
- public void unregister(AdkMessage device) {
-   synchronized (controlledDevicesLock) {
-     controlledDevices.remove(device);    
-   }
- }
-  
-
-
-  
-
-  /**
-   * An outgoing spooler thread, that scans the registered peripherals and 
-   * sends a control packet for any that have been marked as changed (isInvalid())
-   * 
-   * Can throttle bandwidth _to_ the controller board here.
-   *
-   */
-  public class DeviceSync extends Thread{
-    
-    private boolean running = true;
-    private int failures = 0;
-    
-    @Override
-    public void run() {      
-      while (running) {
-        try {
-          if (mOutputStream != null) {
-          // Clearly this can be optimized. so do it.
-            synchronized (controlledDevicesLock) {
-              for (AdkMessage device : controlledDevices) {
-                if (!device.isValid()) {
-                  // Log.d(TAG, "sending control msg : " + printBytes(device.getMessage()));
-                  mOutputStream.write(device.getMessage());
-                  device.validate();
-                  failures = 0;
-                }
-              }              
-            }
-          }
-        //  Thread.yield();
-          try {
-            Thread.sleep(10);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-        }
-        catch (IOException e) {
-          e.printStackTrace();
-          // there seems to be a few of these at init, before the device is
-          // setup maybe? ... I must be using the wrong signal to start
-          //if (failures++ > 10){
-            running = false;
-            Log.d(TAG, "exiting due to channel breaking");
-            onDisconnected();
-          //}
-        }
-      }
-    }
-  }
-  
-  // for debug only, erase me.
-  public String printBytes(byte[] arr) {
-    String result = "[";
-    for (byte x : arr) {
-      result += " "+x;
-    }
-    result += "]";
-    return result;
-  }
-  
 }

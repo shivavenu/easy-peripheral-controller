@@ -2,6 +2,8 @@
 
 package com.google.robotics.peripheral.vendor.google.adk;
 
+import android.util.Log;
+
 import com.google.robotics.peripheral.device.Servo;
 
 /**
@@ -11,52 +13,37 @@ import com.google.robotics.peripheral.device.Servo;
 public class AdkServo extends AdkMessage implements Servo {
   
   private static final String TAG = "Controller::Servo";
-  private static boolean serialize = true;
-  
+ 
   int maxWidth = 2000;
   int minWidth = 1000;  
-  int pulseWidth = 0;
+  int pulseWidth = 1500;
   
   protected AdkController mController;
   
-  public AdkServo(AdkController controller) {
+  public AdkServo(DemoKit controller) {
     mController = controller;
     controller.register(this);    
+    invalidate();
   }
 
-  /**
-   * @param f
-   */
-  
   public void setPosition(float f) {
     setPulseWidth((int)(((maxWidth - minWidth) * f) + minWidth));
   }
- 
-  /* (non-Javadoc)
-   * @see com.google.robotics.peripheral.Servo#setMinMax(int, int)
-   */
   
   public void setBounds(int min, int max) {
     minWidth = min;
     maxWidth = max;    
   }
 
-  /* (non-Javadoc)
-   * @see com.google.robotics.peripheral.Servo#getPulseWidth()
-   */
-
   public int getPulseWidth() {
     return pulseWidth;
   }
   
-  
   public void setPulseWidth(int microseconds) {
-   // if (microseconds != pulseWidth) {
-     //  Log.d(TAG, "setting PW : " + microseconds);
+    if (microseconds != pulseWidth) {
       pulseWidth = microseconds;    
+      setValue((getPulseWidth() - 1000) / 4);
       invalidate();
-   // }
+    }
   }
-  
- 
 }

@@ -15,20 +15,17 @@ public class AdkLed extends AdkMessage implements Led {
   
   boolean mIsOn = false;
  
-  AdkController mController;
+  DemoKit mController;
   
-  public AdkLed(AdkController controller) {
+  public AdkLed(DemoKit controller) {
     mController = controller;
+    mController.register(this);
   }
   
   public boolean isOn() {
     return getMessage()[3] > 0;
   }
 
-  /* (non-Javadoc)
-   * @see com.google.robotics.peripheral.Led#setValue(float)
-   */
-  
   public void setValue(float value) {
     super.setValue((int)value*255);
   }

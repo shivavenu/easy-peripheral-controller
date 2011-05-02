@@ -11,9 +11,9 @@ import com.google.robotics.peripheral.device.DigitalOutput;
 public class AdkRelay extends AdkMessage implements DigitalOutput {
 
   boolean state;
-  AdkController mController;
+  DemoKit mController;
   
-  public AdkRelay(AdkController controller) {
+  public AdkRelay(DemoKit controller) {
     mController = controller;
     mController.register(this);
   }

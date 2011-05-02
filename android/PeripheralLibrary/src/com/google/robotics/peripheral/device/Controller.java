@@ -19,6 +19,8 @@ import java.io.OutputStream;
  */
 public abstract class Controller implements Runnable{
   
+  public static String ACCESSORY_STRING;
+  
   // Supported external accesss to the controller internals.
   /*
    * public abstract DigitalOutput openDigitalOutput(Pin pin); public abstract
