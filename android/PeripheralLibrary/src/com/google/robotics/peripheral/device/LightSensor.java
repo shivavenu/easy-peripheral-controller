@@ -8,6 +8,6 @@ package com.google.robotics.peripheral.device;
  * @author arshan@google.com (Your Name Here)
  *
  */
-public interface LightSensor {
+public interface LightSensor extends ChangeNotifier {
   public abstract int getLux();  
 }

@@ -8,7 +8,7 @@ package com.google.robotics.peripheral.device;
  * @author arshan@google.com (Your Name Here)
  *
  */
-public interface Switch {
+public interface Switch extends ChangeNotifier {
 
   /**
    * Returns the state of the switch.

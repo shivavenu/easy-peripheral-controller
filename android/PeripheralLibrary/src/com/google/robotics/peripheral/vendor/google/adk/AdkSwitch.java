@@ -3,31 +3,27 @@
 package com.google.robotics.peripheral.vendor.google.adk;
 
 import com.google.robotics.peripheral.device.Switch;
+import com.google.robotics.peripheral.util.AbstractInputResource;
 
 /**
  * @author arshan@google.com (Your Name Here)
  *
  */
-public class AdkSwitch implements Switch {
+public class AdkSwitch extends AbstractInputResource implements Switch {
 
     private boolean state = false;
     
-    public AdkSwitch(AdkController controller) {
-      
+    public AdkSwitch(AdkController controller) {      
     }
     
     public void setClosed(boolean val) {
-      state = val;
+      if (val != state) {
+    	state = val;
+      	notifyListeners();
+      }
     }
 
-
-    /* (non-Javadoc)
-     * @see com.google.robotics.peripheral.Switch#isClosed()
-     */
-    
-    public boolean isClosed() {
-      // TODO Auto-generated method stub
-      return state;
-    }
-
+	public boolean isClosed() {
+		return state;
+	}
 }

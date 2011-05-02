@@ -5,8 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import com.google.robotics.peripheral.device.Controller;
-
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -68,18 +66,17 @@ public class AccessoryConnector implements PeripheralConnector {
     return mFileDescriptor != null;
   }
 
-
   public void connect() {
 
     if (isConnected()) {
       Log.d(TAG, "already connected");
-      mListener.Connected(mAccessory);
+      mListener.connected(mAccessory);
       return;
     }
 
     mAccessory = getAccessory();
     if (mAccessory == null) {
-      mListener.ConnectionFailed(null);
+      mListener.connectionFailed(null);
       return;
     }
 
@@ -101,7 +98,7 @@ public class AccessoryConnector implements PeripheralConnector {
   }
 
   public void disconnect() {
-    mListener.Disconnected();
+    mListener.disconnected();
     closeIO();
   }
 
@@ -121,10 +118,10 @@ public class AccessoryConnector implements PeripheralConnector {
       FileDescriptor fd = mFileDescriptor.getFileDescriptor();
       mInputStream = new FileInputStream(fd);
       mOutputStream = new FileOutputStream(fd);
-      mListener.Connected(accessory);
+      mListener.connected(accessory);
       Log.d(TAG, "openAccessory succeeded");
     } else {
-      mListener.ConnectionFailed(accessory);
+      mListener.connectionFailed(accessory);
       Log.d(TAG, "openAccessory fail");
       if (accessory.getManufacturer() == null) {
         throw new RuntimeException("Appears to be hung on the usb accessory handle");
@@ -161,7 +158,7 @@ public class AccessoryConnector implements PeripheralConnector {
             openIO(accessory);
           } else {
             Log.d(TAG, "permission denied for accessory " + accessory);
-            mListener.ConnectionFailed(accessory);
+            mListener.connectionFailed(accessory);
           }
           mPermissionRequestPending = false;
         }

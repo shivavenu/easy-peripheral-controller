@@ -3,7 +3,8 @@
 package com.google.robotics.peripheral.vendor.google.adk;
 
 /**
- * Keep some simple info that all 'controlled' devices have to keep track of.
+ * Keep some simple info that all 'controlled' devices have to keep track of
+ * for the ADK firmware. 
  * 
  * @author arshan@google.com (Arshan Poursohi)
  *

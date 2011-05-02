@@ -3,27 +3,23 @@
 package com.google.robotics.peripheral.vendor.google.adk;
 
 import com.google.robotics.peripheral.device.TemperatureSensor;
+import com.google.robotics.peripheral.util.AbstractInputResource;
 
 /**
  * @author arshan@google.com (Arshan Poursohi)
  *
  */
-public class AdkTemperatureSensor implements TemperatureSensor {
+public class AdkTemperatureSensor extends AbstractInputResource implements TemperatureSensor {
     
     private int temp = 0;
     
-    public AdkTemperatureSensor(AdkController controller) {
-     
+    public AdkTemperatureSensor(AdkController controller) {     
     }
     
     public void setTemperature(int val) {
       temp = val;
+      notifyListeners();
     }
-    
-    /* (non-Javadoc)
-     * @see com.google.robotics.peripheral.TemperatureSensor#getTemperature()
-     */
-    
     
     public int getValue() {
       return temp;

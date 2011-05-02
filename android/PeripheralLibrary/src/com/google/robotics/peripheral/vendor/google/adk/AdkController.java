@@ -79,10 +79,10 @@ public abstract class AdkController extends Controller {
   }
   
   /**
+   * This call back should be made by the handler of the inputstream 
+   * when that stream breaks.
    */
   public void onDisconnected() {
-    
-
     mConnected = false;
 	    
 	if (callbackHandler != null) {
@@ -91,13 +91,8 @@ public abstract class AdkController extends Controller {
     
     if (mConnector != null) {
     	Log.d(TAG, "disconnecting the peripheral connector");
-    	// TODO (*arshan) this might have to come back.
     	mConnector.disconnect();
-    }
-    // cheap hack, but causes the demokit to exit, which allows
-    // a nice clean one on the next round.
-    // System.exit(0); // maybe make into an option
-    // return;
+    }   
   }
   
  

@@ -9,7 +9,7 @@ import android.hardware.usb.UsbAccessory;
  *
  */
 public interface ConnectionListener {
-  public void Connected(UsbAccessory accessory);
-  public void ConnectionFailed(UsbAccessory accessory);
-  public void Disconnected();
+  public void connected(UsbAccessory accessory);
+  public void connectionFailed(UsbAccessory accessory);
+  public void disconnected();
 }

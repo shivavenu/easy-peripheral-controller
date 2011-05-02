@@ -52,14 +52,6 @@ public class ServoExample extends Activity {
     super.onResume();
   }
 
-  public void connect(View view) {
-    connector.connect();
-  }
-
-  public void disconnect(View view) {
-    connector.disconnect();
-  }
-
   @Override
   public void onDestroy() {
     connector.disconnect();
@@ -105,14 +97,16 @@ public class ServoExample extends Activity {
     public void moveIt(int x , int y) {
       lastTouch.x = x;
       lastTouch.y = y;
-
+      
+      // change the on screen message
       text = "touched " + lastTouch.x + " x " + lastTouch.y;
-
       invalidate();
       
       if (adk == null) {
-        connect(null);
+    	  // Polling for a connected UsbAccessory.
+    	  connector.connect();
       } else {
+    	 
         float xfactor = (float) (lastTouch.x / 1280f);
         float yfactor = (float) (lastTouch.y / 720f);
 
@@ -127,10 +121,7 @@ public class ServoExample extends Activity {
     public boolean onTouch(View view, MotionEvent event) {
       // if(event.getAction() != MotionEvent.ACTION_DOWN)
       // return super.onTouchEvent(event);
-
-      moveIt((int) event.getX(), (int) event.getY());
-    
-    
+      moveIt((int) event.getX(), (int) event.getY());    
       return true;
     }
   }
@@ -138,8 +129,7 @@ public class ServoExample extends Activity {
 
   private ConnectionListener connectionListener = new ConnectionListener() {
 
-    @Override
-    public void Connected(UsbAccessory accessory) {
+    public void connected(UsbAccessory accessory) {
       logIt("connected");
       adk = new DemoKit(connector);
       /*
@@ -150,20 +140,15 @@ public class ServoExample extends Activity {
       // adk.getServo(0).setBounds(600, 240);
       adk.getRelay(0).setValue(true); // if we want to use for on switch.
       
-      ((AdkLightSensor)(adk.getLightSensor())).registerHandler(lightSensor);
-      adk.getJoystick().registerHandler(new JoystickHandler(mTestView));
-//      ((AdkJoystick)(adk.getJoystick())).registerHandler(joystick);
-      // .registerHandler(lightSensor);
-      
+      adk.getLightSensor().registerHandler(lightSensor);
+      adk.getJoystick().registerHandler(new JoystickHandler(mTestView));      
     }
 
-    @Override
-    public void ConnectionFailed(UsbAccessory accessory) {
+    public void connectionFailed(UsbAccessory accessory) {
       logIt("connection Failed");
     }
 
-    @Override
-    public void Disconnected() {
+    public void disconnected() {
       adk = null;
       logIt("disconnected");
     }
