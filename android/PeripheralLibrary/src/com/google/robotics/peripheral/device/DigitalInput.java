@@ -2,6 +2,8 @@
 
 package com.google.robotics.peripheral.device;
 
+import com.google.robotics.peripheral.util.ChangeNotifier;
+
 /**
  * @author arshan@google.com (Your Name Here)
  *

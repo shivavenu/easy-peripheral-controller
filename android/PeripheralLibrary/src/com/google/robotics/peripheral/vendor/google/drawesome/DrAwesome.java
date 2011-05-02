@@ -27,7 +27,7 @@ public class DrAwesome extends AdkController {
 
   private static final char OP_RESET         = 0x00;
   private static final char OP_DIGITAL_READ  = 0x01;
-  private static final char OP_DIGITAL_WRITE = 0x02;
+  private static final char OP_DIGITAL_WRITE = 0x02; // consider moving this into extended op space.
   private static final char OP_DIGITAL_WATCH = 0x03;
   private static final char OP_ANALOG_READ   = 0x05;
   private static final char OP_ANALOG_WRITE  = 0x06;
@@ -86,6 +86,10 @@ public class DrAwesome extends AdkController {
     char header = (char) (MSG_SIZE_1 | OP_DIGITAL_WRITE);
     char data = (char) (((value) ? 0x80 : 0x00) | ((char) pin & 0x7F));
     getOutputStream().write(new byte[]{(byte)header, (byte)data});
+  }
+  
+  public void digitalWatch(int pin, int period) throws IOException {
+//    getOutputStream().write(new byte[]{(MSG_SIZE_N | OP_DIGITAL_WATCH), });
   }
 
   public void run() {

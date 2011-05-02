@@ -2,12 +2,10 @@
 
 package com.google.robotics.peripheral.vendor.google.adk;
 
-import android.os.Handler;
-import android.os.Message;
 
-import com.google.robotics.peripheral.device.ChangeNotifier;
 import com.google.robotics.peripheral.device.Joystick;
 import com.google.robotics.peripheral.util.AbstractInputResource;
+import com.google.robotics.peripheral.util.ChangeNotifier;
 import com.google.robotics.peripheral.util.Range;
 
 
@@ -15,7 +13,7 @@ import com.google.robotics.peripheral.util.Range;
  * @author arshan@google.com (Your Name Here)
  *
  */
-public class AdkJoystick extends AbstractInputResource implements Joystick, ChangeNotifier  {
+public class AdkJoystick extends AbstractInputResource implements Joystick {
 
   private AdkSwitch button;
   private Range xPosition = new Range(-120,120);
