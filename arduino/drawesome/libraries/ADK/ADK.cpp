@@ -9,6 +9,11 @@
 ADK::ADK(AndroidAccessory &droid) {
   this->_droid = &droid;
   this->_loggingOut = 0x0;
+  
+  // setup for the input buffer
+  _current = 0;
+  _max = 0;
+  memset(_input_buffer, 0x0, sizeof(_input_buffer));
 
   // Setup OP_CODE handling.
   memset(_opCodeHandlers, 0x0, 32);
@@ -45,7 +50,9 @@ void ADK::init() {
 
 void ADK::enableLogging(bool enable) {
   this->_loggingEnabled = enable;
+
 }
+
 
 void ADK::setLoggingOutput(HardwareSerial &sout) {
   this->_loggingOut = &sout;
@@ -58,12 +65,26 @@ void ADK::setLoggingOutput(HardwareSerial &sout) {
  * TODO(clayb): is this the final name?
  */
 void ADK::checkForInput() {
+
+  // need a way to escape in the case of the ADK, use a t/c? -arshan
   if (availableChar() == 0) {
-    return;
+    // note that this _might_ have the side effect of actually reading 
+    // chars if they are available. The available chars might be zero.
+    fillInputBuffer();
   }
 
   // Initial examination of the incoming request.
-  char header = blockingReadChar();
+  char header = readChar();
+
+  // the Accessory lib returns the buffer size 
+  // since we use buffer size 1, we could check for 1 here. 
+  if (header == NULL) {   
+    //    log("no header\n");
+    return;
+  }
+
+  // log("go\n");
+
   bool varMsgSize = header & 0x80;
   int msgSize = (header & 0x60) >> 5;
   char opCode = header & 0x1f;
@@ -71,12 +92,14 @@ void ADK::checkForInput() {
     msgSize = blockingReadChar();
   }
 
+#ifdef DEBUG
   // DEBUG printing.
-  // if (loggingEnabled()) {
-  //   char buf[80];
-  //   sprintf(buf, "incoming command. OP_CODE: 0x%x\n", opCode);
-  //   log(buf);
-  // }
+  if (loggingEnabled()) {
+     char buf[80];
+     sprintf(buf, "incoming command. OP_CODE: 0x%x : %d\n", opCode,  msgSize );
+     log(buf);
+  }
+#endif
 
   // Choose a continue function based on OP_CODE.
   void (ADK::*opCodeFunc)(char, int) = _opCodeHandlers[opCode];
@@ -107,28 +130,57 @@ void ADK::log(char *str) {
 //-------------------------------------------------------------------
 // Consolidate communications calls we we can swap them out.
 //-------------------------------------------------------------------
-char ADK::blockingReadChar() {
-  // This read is blocking.
-  while (availableChar() == 0);
-  return Serial.read();
 
-  // char input = 0x0;
-  // _droid->read(&input, 1);
-  // return input;
+
+char ADK::readChar() {
+  if (_current >= _max) {
+    return NULL;
+  }
+  else {
+    return _input_buffer[_current++];
+  }
+}
+
+
+int ADK::fillInputBuffer() {
+  _max = _droid->read(_input_buffer, 
+		      sizeof(_input_buffer), 
+		      1);
+  _current = 0;
+#ifdef DEBUG
+  if (_max > 0) {
+    char buf[80];
+    sprintf(buf, "filled the input buffer: %d\n", _max);
+    log(buf);
+  }
+#endif
+  if (_max < 0) {
+    // this means there was an error in reading ... reset something?
+    _max = 0;
+  }
+  return _max;
+}
+
+char ADK::blockingReadChar() {
+  // This read is blocking.  
+  while (availableChar() == 0) 
+    fillInputBuffer();
+  
+  // return Serial.read();
+  return readChar();
 }
 
 void ADK::writeBytes(byte *buf, int size) {
-  for (int i = 0; i < size; i++) {
-    Serial.write(buf[i]);
-  }
+ // for (int i = 0; i < size; i++) {
+ //   Serial.write(buf[i]);
+ // }
 
-  // _droid->write(buf, size);
+  _droid->write(buf, size);
 }
 
 int ADK::availableChar() {
-  return Serial.available();
-
-  // return 1;  // very bad juju!
+  // return Serial.available();
+  return _max - _current;
 }
 
 
@@ -186,12 +238,21 @@ void ADK::doDigitalOp(char opCode, int msgSize) {
   char c = blockingReadChar();
   char pin = c & 0x7F;
   char bitVal = c >> 7;
+ 
+#ifdef DEBUG
+  char buf[80];
+  sprintf(buf, "pin : %d val : %d\n", pin , bitVal);
+  log(buf);
+#endif
 
   if (opCode == ADK_OP_PIN_MODE) {
+    // log("changing pin mode\n");
     pinMode(pin, bitVal);
   } else if (opCode == ADK_OP_DIGITAL_READ) {
+    // log("reading ping value\n");
     adkOpDigitalWrite(pin, digitalRead(pin));
   } else if (opCode == ADK_OP_DIGITAL_WRITE) {
+    // log("writing value to pin\n");
     digitalWrite(pin, bitVal);
   } else {
     this->doOpNotImplemented(opCode, msgSize);

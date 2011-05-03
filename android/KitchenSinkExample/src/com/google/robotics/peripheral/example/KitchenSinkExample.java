@@ -173,7 +173,7 @@ public class KitchenSinkExample extends Activity {
   };
 
   // Utility methods.
-  // /////////////////////
+  ///////////////////////
 
   long lastToast = 0;
   long maxToast = 500; // only one every half second ...

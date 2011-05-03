@@ -14,12 +14,14 @@ AndroidAccessory acc(
    "0.1",
    "http://www.android.com",
    "0000000012345678");
+   
+   
 ADK adk(acc);
 
 void setup() {
   Serial.begin(115200);
   adk.enableLogging(true);
-//  adk.setLoggingOutput(Serial);
+  adk.setLoggingOutput(Serial);
 
   acc.powerOn();
   adk.init();
@@ -27,13 +29,26 @@ void setup() {
   // Show a sign of life.
   pinMode(7, OUTPUT);
   analogWrite(7, 0xFE);
+
+  pinMode(6, OUTPUT);
 }
 
 bool amConnected = false;
 void loop() {
 
-  adk.checkForInput();
-
+  if (acc.isConnected()) {
+    // so this is broken because ... 
+    // the check for input blocks til char comes in
+    // so we are heartbeating the thing from android space. 
+    // have to change this to interrupt out or some such.
+    adk.checkForInput();
+    digitalWrite(6, LOW);
+  }
+  else {
+    digitalWrite(6, HIGH);
+    delay(100);
+  }
+  
 //  if (acc.isConnected()) {
 //    if (!amConnected) {
 //      Serial.println("at long last I am connected. :)");

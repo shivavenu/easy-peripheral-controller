@@ -59,11 +59,19 @@ private:
 
   bool _loggingEnabled;
   HardwareSerial *_loggingOut;
+  
+  
+  // Input Buffer for reading from the USB.
+  char _input_buffer[32]; // TODO(arshan) : tune this number.
+  int _current;
+  int _max;
 
   //------
   // Consolidate communications calls we we can swap them out.
   //------
   int availableChar();
+  char readChar(); // cached char read, can block 
+  int fillInputBuffer();
   char blockingReadChar();
   void writeBytes(byte *buf, int size);
 

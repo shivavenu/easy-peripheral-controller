@@ -25,7 +25,7 @@ import android.util.Log;
  */
 public class AccessoryConnector implements PeripheralConnector {
 
-  private static final String TAG = "AccessoryWrapper";
+  private static final String TAG = "AcccessoryConnector";
 
   // Intents
   private PendingIntent mPermissionIntent;
