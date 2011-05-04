@@ -75,7 +75,7 @@ public class DrAwesome extends AdkController implements Runnable {
     super(connector);
   }
   
-  public void init() {
+  protected void init() {
     // must be something? 
     new Thread(this).start();
   }
@@ -85,7 +85,7 @@ public class DrAwesome extends AdkController implements Runnable {
   public  void togglePin(int pin) {
     Log.d(TAG, "toggling "+pin +" to " + value);
     try {
-      pinMode(pin, OUTPUT);
+     
       digitalWrite(pin, value);
       value = !value;
     } catch (IOException e) {
@@ -94,23 +94,23 @@ public class DrAwesome extends AdkController implements Runnable {
   }
 
   public synchronized void pinMode(int pin, int mode) throws IOException {
-    char header = (char) (MSG_SIZE_1 | OP_PIN_MODE);
-    byte data =  (byte)(( (mode<<7) | (pin & 0x7F) ) & 0xFF);
-    Log.d(TAG, "sending pin mode change " + Integer.toHexString(header) + " : " + Integer.toHexString(data));
-    getOutputStream().write(new byte[]{(byte)header, data});
+    mWriteBuffer[0] = (MSG_SIZE_1 | OP_PIN_MODE);
+    mWriteBuffer[1] =  (byte)(( (mode<<7) | (pin & 0x7F) ) & 0xFF);
+    getOutputStream().write(mWriteBuffer, 0, 2);
   }
   
   public synchronized void digitalWrite(int pin, boolean value) throws IOException {
-    char header = (char) (MSG_SIZE_1 | OP_DIGITAL_WRITE);
-    char data = (char) (((value) ? 0x80 : 0x00) | ((char) pin & 0x7F));
-    Log.d(TAG, "sending digital write " + Integer.toHexString(header) + " : " + Integer.toHexString(data));
-    getOutputStream().write(new byte[]{(byte)header, (byte)data});
+    mWriteBuffer[0] = (MSG_SIZE_1 | OP_DIGITAL_WRITE);
+    mWriteBuffer[1] = (byte) (((value) ? 0x80 : 0x00) | ((char) pin & 0x7F));
+    getOutputStream().write(mWriteBuffer, 0, 2);
   }
   
-  public synchronized boolean digitalRead(int pin) {
+  public synchronized boolean digitalRead(int pin) throws IOException {
     clearInputBuffers();
     mWriteBuffer[0] = (MSG_SIZE_1 | OP_DIGITAL_READ);
     mWriteBuffer[1] = (byte) (pin & 0xFF);
+    getOutputStream().write(mWriteBuffer, 0, 2);
+
     // wait on return message ... with timeout? 
     return true;
   }

@@ -70,7 +70,7 @@ void ADK::checkForInput() {
   if (availableChar() == 0) {
     // note that this _might_ have the side effect of actually reading 
     // chars if they are available. The available chars might be zero.
-    fillInputBuffer();
+   fillInputBuffer();
   }
 
   // Initial examination of the incoming request.
@@ -89,7 +89,7 @@ void ADK::checkForInput() {
   int msgSize = (header & 0x60) >> 5;
   char opCode = header & 0x1f;
   if (varMsgSize) {
-    msgSize = blockingReadChar();
+    msgSize = readChar();
   }
 
 #ifdef DEBUG

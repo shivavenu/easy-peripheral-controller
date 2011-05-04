@@ -13,6 +13,7 @@ import android.util.Log;
 
 import com.google.robotics.peripheral.connector.PeripheralConnector;
 import com.google.robotics.peripheral.device.Controller;
+import com.google.robotics.peripheral.vendor.arduino.ArduinoMega;
 
 /**
  * Expose an interface of what a controller is expected to support (this might
@@ -24,7 +25,7 @@ import com.google.robotics.peripheral.device.Controller;
  * @author arshan@google.com (Arshan Poursohi)
  */
 
-public abstract class AdkController extends Controller {
+public abstract class AdkController extends ArduinoMega {
 
   private static final String TAG = "AdkController";
 
