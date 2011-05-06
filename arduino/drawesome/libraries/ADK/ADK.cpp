@@ -49,13 +49,18 @@ void ADK::init() {
 }
 
 void ADK::enableLogging(bool enable) {
+#ifdef DEBUG
   this->_loggingEnabled = enable;
-
+#else
+  this->_loggingEnabled = false;
+#endif
 }
 
 
 void ADK::setLoggingOutput(HardwareSerial &sout) {
+#ifdef DEBUG
   this->_loggingOut = &sout;
+#endif
 }
 
 /**
@@ -66,29 +71,23 @@ void ADK::setLoggingOutput(HardwareSerial &sout) {
  */
 void ADK::checkForInput() {
 
-  // need a way to escape in the case of the ADK, use a t/c? -arshan
   if (availableChar() == 0) {
-    // note that this _might_ have the side effect of actually reading 
-    // chars if they are available. The available chars might be zero.
    fillInputBuffer();
   }
 
-  // Initial examination of the incoming request.
-  char header = readChar();
+  char header = readChar(); 
 
-  // the Accessory lib returns the buffer size 
-  // since we use buffer size 1, we could check for 1 here. 
+  // If no char available will return null.
   if (header == NULL) {   
-    //    log("no header\n");
     return;
   }
 
-  // log("go\n");
-
+  
   bool varMsgSize = header & 0x80;
   int msgSize = (header & 0x60) >> 5;
   char opCode = header & 0x1f;
   if (varMsgSize) {
+    // TODO: recover from a bad stream here. 
     msgSize = readChar();
   }
 
@@ -293,7 +292,7 @@ void ADK::doRegisterOp(char opCode, int msgSize) {
   // Perform the requested operation.
   char mask = blockingReadChar();
   if (operation == 0x00) { // R1-READ
-    // TODO(clayb): implement.
+    // TODO(arshan): implement.
   } else if (operation == 0x01) { // R1-SET
     *reg  = mask;
   } else if (operation == 0x02) { // R1-AND
@@ -326,6 +325,7 @@ void ADK::doTwiRead(char opCode, int msgSize) {
   }
   if (i < responseSize && loggingEnabled()) {
     log("ERROR: expected I2C data was unavailable.\n");
+    // TODO(arshan) : write back error conditions in the proto
   }
   buf[i] = 0x0;
   adkOpTwiWrite(addr, buf, i);

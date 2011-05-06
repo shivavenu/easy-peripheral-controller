@@ -30,7 +30,8 @@ public class KitchenSinkExample extends Activity {
 
   private TestView mTestView;
   private DemoKit adk;
-  private AccessoryConnector connector;
+  
+  private JoystickHandler mJoystickHandler;   
 
   /** Called when the activity is first created.; */
   @Override
@@ -41,8 +42,9 @@ public class KitchenSinkExample extends Activity {
     mTestView = new TestView(this);
     setContentView(mTestView);
     mTestView.requestFocus();
-    
-    connector = new AccessoryConnector(this, DemoKit.ACCESSORY_STRING, connectionListener);
+
+    mJoystickHandler = new JoystickHandler(mTestView);
+    adk = new DemoKit(this, connectionListener);
     
     logIt("created");
   }
@@ -53,8 +55,7 @@ public class KitchenSinkExample extends Activity {
 
   @Override
   public void onDestroy() {
-    connector.disconnect();
-    connector = null;
+    adk.onDestroy();
     super.onDestroy();
   }
   
@@ -94,10 +95,7 @@ public class KitchenSinkExample extends Activity {
       text = "touched " + lastTouch.x + " x " + lastTouch.y;
       invalidate();
       
-      if (adk == null) {
-    	  // Polling for a connected UsbAccessory.
-    	  connector.connect();
-      } else {
+      if (adk.isConnected()){
     	 
         float xfactor = (float) (lastTouch.x / 1280f);
         float yfactor = (float) (lastTouch.y / 720f);
@@ -107,7 +105,10 @@ public class KitchenSinkExample extends Activity {
 
         adk.getLed(0).setBlue((int) (255 * xfactor));
         adk.getLed(2).setGreen((int) (255 * yfactor));
+      } else {
+        text += " [no accessory]";
       }
+       
     }
 
     public boolean onTouch(View view, MotionEvent event) {
@@ -123,17 +124,10 @@ public class KitchenSinkExample extends Activity {
 
     public void connected(UsbAccessory accessory) {
       logIt("connected");
-      adk = new DemoKit(connector);
-      /*
-       * PeripheralManager.getInstance().registerListener( lightEventListener,
-       * PeripheralManager.getDefault(PeripheralSensor.TYPE_LIGHT),
-       * PeripheralManager.SENSOR_DELAY_NORMAL );
-       */
-      // adk.getServo(0).setBounds(600, 240);
-      adk.getRelay(0).setValue(true); // if we want to use for on switch.
       
+      adk.getRelay(0).setValue(true); // if we want to use for on switch.      
       adk.getLightSensor().registerHandler(lightSensor);
-      adk.getJoystick().registerHandler(new JoystickHandler(mTestView));      
+      adk.getJoystick().registerHandler(mJoystickHandler);      
     }
 
     public void connectionFailed(UsbAccessory accessory) {
@@ -141,7 +135,6 @@ public class KitchenSinkExample extends Activity {
     }
 
     public void disconnected() {
-      adk = null;
       logIt("disconnected");
     }
     
@@ -166,9 +159,9 @@ public class KitchenSinkExample extends Activity {
     }
     public void handleMessage(Message msg) {      
       Joystick jstick = (Joystick)(msg.obj);
-      mView.moveIt((int)(jstick.getX()*1280), (int)(jstick.getY()*960));
+    //  mView.moveIt((int)(jstick.getX()*1280), (int)(jstick.getY()*960));
       Log.d(TAG, "jstick : " + jstick.getX() + "x" + jstick.getY());
-      mView.invalidate();
+     //  mView.invalidate();
     }
   };
 

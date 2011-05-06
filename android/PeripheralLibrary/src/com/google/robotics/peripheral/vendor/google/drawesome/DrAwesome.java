@@ -2,9 +2,11 @@
 
 package com.google.robotics.peripheral.vendor.google.drawesome;
 
+import android.content.Context;
+import android.hardware.usb.UsbAccessory;
 import android.util.Log;
 
-import com.google.robotics.peripheral.connector.AccessoryConnector;
+import com.google.robotics.peripheral.connector.ConnectionListener;
 import com.google.robotics.peripheral.vendor.google.adk.AdkController;
 
 import java.io.IOException;
@@ -71,8 +73,15 @@ public class DrAwesome extends AdkController implements Runnable {
     super(in, out);
   }
   
-  public DrAwesome(AccessoryConnector connector ) {
-    super(connector);
+  public DrAwesome(Context context, ConnectionListener listener) {
+    super(context, listener);
+   
+  }
+  
+  @Override
+  public void connected(UsbAccessory accessory) {
+    super.connected(accessory);  
+    init();
   }
   
   protected void init() {
@@ -142,7 +151,7 @@ public class DrAwesome extends AdkController implements Runnable {
       }
     }
     
-    onDisconnected();
+    disconnected();
   }
 
   

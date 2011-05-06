@@ -2,6 +2,7 @@
 
 package com.google.robotics.peripheral.vendor.google;
 
+import android.hardware.usb.UsbAccessory;
 import android.util.Log;
 
 import com.google.robotics.peripheral.device.Servo;
@@ -163,7 +164,7 @@ public class ServoXVIII extends AdkController {
           //if (failures++ > 10){
             running = false;
             Log.d(TAG, "exiting due to channel breaking");
-            onDisconnected();
+            disconnected();
           //}
         }
       }
@@ -180,7 +181,6 @@ public class ServoXVIII extends AdkController {
     synchronized (controlledDevicesLock) {
       controlledDevices.remove(device);
     }
-  }
-  
+  }  
 
 }

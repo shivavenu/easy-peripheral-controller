@@ -15,29 +15,29 @@ import com.google.robotics.peripheral.vendor.google.adk.DemoKit;
 public class ServoExample extends Activity {
     private static final String TAG = "ServoExample";
     private DemoKit adk;
-    private AccessoryConnector connector;
     
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        connector = new AccessoryConnector(this, DemoKit.ACCESSORY_STRING, connectionListener);        
+        Log.d(TAG, "onCreate");
+        adk = new DemoKit(this, connectionListener);      
+      
         setContentView(R.layout.main);
     }
     
     public void onDestroy() {
-      connector.disconnect();
-      connector = null;
+      Log.d(TAG, "onDestroy");
+      adk.onDestroy();
       super.onDestroy();
     }
     
     public void moveServo(View view) {
-      if (adk == null) {
-        connector.connect();
+      if (adk.isConnected()) {
+        new ServoMover().execute();
       }
       else {
-        new ServoMover().execute();
+        Log.d(TAG, "cant move servo until we're connected");
       }
     }
     
@@ -47,8 +47,10 @@ public class ServoExample extends Activity {
       @Override
       protected Void doInBackground(Void... params) {
         float pos = 0;
+        Log.d("servo mover", "moving servo");
         while (pos <= 1f && adk != null) {
           adk.getServo(0).setPosition(pos);
+          adk.getServo(1).setPosition(pos);
           pos += .01;
           try {
             Thread.sleep(50);
@@ -56,18 +58,22 @@ public class ServoExample extends Activity {
             e.printStackTrace();
           }
         }
+        adk.getServo(0).setPosition(.5f);
+        adk.getServo(1).setPosition(.5f);
         return null;
       } 
       
     }
     
+    /**
+     * Respond to changes in the connection state of the DemoKit.
+     */
     private ConnectionListener connectionListener = new ConnectionListener() {
-
       public void connected(UsbAccessory accessory) {
         Log.d(TAG, "Connected");        
-        adk = new DemoKit(connector);
         adk.getLed(1).setColor(Color.GREEN);
-        moveServo(null);
+        adk.getServo(0).setPosition(.5f);
+        adk.getServo(1).setPosition(.5f);
       }
 
       public void connectionFailed(UsbAccessory accessory) {       

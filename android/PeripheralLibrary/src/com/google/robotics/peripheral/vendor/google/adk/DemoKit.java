@@ -2,9 +2,12 @@
 
 package com.google.robotics.peripheral.vendor.google.adk;
 
+import android.content.Context;
+import android.hardware.usb.UsbAccessory;
 import android.util.Log;
 
-import com.google.robotics.peripheral.connector.PeripheralConnector;
+import com.google.robotics.peripheral.connector.AccessoryConnector;
+import com.google.robotics.peripheral.connector.ConnectionListener;
 import com.google.robotics.peripheral.device.DigitalOutput;
 import com.google.robotics.peripheral.device.Joystick;
 import com.google.robotics.peripheral.device.LightSensor;
@@ -26,7 +29,7 @@ import java.util.List;
  * Code is largely swiped from the AndroidAccessory DemoKit application.
  * 
  */
-public class DemoKit extends AdkController implements Runnable {
+public class DemoKit extends AdkController implements Runnable, ConnectionListener {
 
 	public static final String ACCESSORY_STRING = 
 			"com.google.android.DemoKit";
@@ -48,14 +51,32 @@ public class DemoKit extends AdkController implements Runnable {
   List<AdkMessage> controlledDevices = new LinkedList<AdkMessage>();
   private final Object controlledDevicesLock = new Object();
   
-  public DemoKit(PeripheralConnector connector) {
-	  super(connector);
-	  init();
+  public DemoKit(Context context, ConnectionListener listener) {
+    super(context, listener);
   }
   
   public DemoKit(InputStream in, OutputStream out) {
     super(in,out);
     init();
+  }
+
+  
+  /**
+   * Catch the connected signal and start our own threads. 
+   * Make sure you call the super.connected so that things are properly 
+   * initialized.
+   */
+  @Override
+  public void connected(UsbAccessory accessory) {
+    Log.d(TAG, "connected");
+    init();
+    
+    super.connected(accessory);   
+    
+    Log.d(TAG, "starting i/o threads");
+    
+    new Thread(this).start();
+    startDeviceSync();
   }
   
   // setup all the object state
@@ -84,11 +105,7 @@ public class DemoKit extends AdkController implements Runnable {
     touchDroid = new AdkSwitch(this);
     joystick = new AdkJoystick(this);
     temperatureSensor = new AdkTemperatureSensor(this);
-    lightSensor = new AdkLightSensor(this);
- 
-    new Thread(this).start();
-    startDeviceSync();
-    
+    lightSensor = new AdkLightSensor(this);    
   }
   
   protected void startDeviceSync() {
@@ -190,7 +207,8 @@ public class DemoKit extends AdkController implements Runnable {
       }
     }
   
-    onDisconnected();
+    Log.d(TAG, "exiting input thread, and disconnecting accessory");
+    disconnected();
     
   }
   
@@ -244,7 +262,7 @@ public class DemoKit extends AdkController implements Runnable {
             synchronized (controlledDevicesLock) {
               for (AdkMessage device : controlledDevices) {
                 if (!device.isValid()) {
-                  Log.d(TAG, "sending control msg : " + printBytes(device.getMessage()));
+                  // Log.d(TAG, "sending control msg : " + printBytes(device.getMessage()));
                   getOutputStream().write(device.getMessage());
                   device.validate();
                   failures = 0;
@@ -252,12 +270,15 @@ public class DemoKit extends AdkController implements Runnable {
               }              
             }
           }
-        //  Thread.yield();
-          try {
-            Thread.sleep(10);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
+          else {
+            running = false;
           }
+        //  Thread.yield();
+          //try {
+          //  Thread.sleep(10);
+          //} catch (InterruptedException e) {
+          //  e.printStackTrace();
+         // }
         }
         catch (IOException e) {
           e.printStackTrace();
@@ -266,10 +287,11 @@ public class DemoKit extends AdkController implements Runnable {
           //if (failures++ > 10){
             running = false;
             Log.d(TAG, "exiting due to channel breaking");
-            onDisconnected();
+            disconnected();
           //}
         }
       }
+      Log.d(TAG, "Exiting sync thread");
     }
   }
   
