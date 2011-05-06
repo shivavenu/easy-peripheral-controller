@@ -18,12 +18,13 @@ public class AdkLed extends AdkMessage implements Led {
   DemoKit mController;
   
   public AdkLed(DemoKit controller) {
+    super(controller);
     mController = controller;
     mController.register(this);
   }
   
   public boolean isOn() {
-    return getMessage()[3] > 0;
+    return toBytes()[3] > 0;
   }
 
   public void setValue(float value) {

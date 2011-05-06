@@ -175,7 +175,6 @@ public class AccessoryConnector implements PeripheralConnector {
       mInputStream = null;
       mOutputStream = null;
     }
-
   }
 
   private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
@@ -185,7 +184,11 @@ public class AccessoryConnector implements PeripheralConnector {
       if (mUsbPermissionString.equals(action)) {
         synchronized (this) {
           UsbAccessory[] accessoryArray = mUsbManager.getAccessoryList();
-          if (accessoryArray.length == 1) {
+          if (accessoryArray == null) {
+            Log.d(TAG, "usb accessory returned null array");
+          }
+          if (accessoryArray != null && 
+              accessoryArray.length == 1) {
             UsbAccessory accessory = accessoryArray[0];
 
             if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
@@ -197,7 +200,8 @@ public class AccessoryConnector implements PeripheralConnector {
             }
             mPermissionRequestPending = false;
           } else {
-            Log.d(TAG, "Unexpected accessory list size : " + accessoryArray.length);
+            Log.d(TAG, "Unexpected accessory list size : " + 
+              (accessoryArray == null? null : accessoryArray.length));
           }
         }
       } else if (UsbManager.ACTION_USB_ACCESSORY_DETACHED.equals(action)) {

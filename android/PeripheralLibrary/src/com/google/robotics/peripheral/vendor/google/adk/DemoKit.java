@@ -6,7 +6,6 @@ import android.content.Context;
 import android.hardware.usb.UsbAccessory;
 import android.util.Log;
 
-import com.google.robotics.peripheral.connector.AccessoryConnector;
 import com.google.robotics.peripheral.connector.ConnectionListener;
 import com.google.robotics.peripheral.device.DigitalOutput;
 import com.google.robotics.peripheral.device.Joystick;
@@ -21,6 +20,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Slightly subversive version of controller that assumes the whole ADK. ie. the
@@ -49,6 +49,7 @@ public class DemoKit extends AdkController implements Runnable, ConnectionListen
   DeviceSync dSync;
 
   List<AdkMessage> controlledDevices = new LinkedList<AdkMessage>();
+  LinkedBlockingQueue<AdkMessage> outputQueue = new LinkedBlockingQueue<AdkMessage>();
   private final Object controlledDevicesLock = new Object();
   
   public DemoKit(Context context, ConnectionListener listener) {
@@ -77,6 +78,13 @@ public class DemoKit extends AdkController implements Runnable, ConnectionListen
     
     new Thread(this).start();
     startDeviceSync();
+  }
+  
+  @Override 
+  public void queueOutputMessage(AdkMessage message){
+    if (! outputQueue.contains(message) ) {
+      outputQueue.offer(message);
+    }
   }
   
   // setup all the object state
@@ -255,30 +263,18 @@ public class DemoKit extends AdkController implements Runnable, ConnectionListen
     
     @Override
     public void run() {      
+      AdkMessage message;
       while (running) {
         try {
+          message = outputQueue.take();
           if (getOutputStream() != null) {
-          // Clearly this can be optimized. so do it.
-            synchronized (controlledDevicesLock) {
-              for (AdkMessage device : controlledDevices) {
-                if (!device.isValid()) {
-                  // Log.d(TAG, "sending control msg : " + printBytes(device.getMessage()));
-                  getOutputStream().write(device.getMessage());
-                  device.validate();
-                  failures = 0;
-                }
-              }              
-            }
+           getOutputStream().write(message.toBytes());
           }
           else {
             running = false;
           }
-        //  Thread.yield();
-          //try {
-          //  Thread.sleep(10);
-          //} catch (InterruptedException e) {
-          //  e.printStackTrace();
-         // }
+        } catch (InterruptedException e) {
+          e.printStackTrace();
         }
         catch (IOException e) {
           e.printStackTrace();

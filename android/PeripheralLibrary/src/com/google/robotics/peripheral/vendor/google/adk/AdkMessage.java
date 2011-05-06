@@ -2,6 +2,8 @@
 
 package com.google.robotics.peripheral.vendor.google.adk;
 
+import java.io.IOException;
+
 /**
  * Keep some simple info that all 'controlled' devices have to keep track of
  * for the ADK firmware. 
@@ -11,9 +13,12 @@ package com.google.robotics.peripheral.vendor.google.adk;
  */
 public class AdkMessage {
 
-  private boolean synced = false;
-  
   private byte[] message = new byte[3];
+  private AdkController mController;
+
+  public AdkMessage(AdkController controller) {
+    mController = controller;
+  }
   
   public void setPrefix(int val) {
     message[0] = (byte)(val&0xff);
@@ -28,19 +33,11 @@ public class AdkMessage {
     invalidate();
   }
 
-  public boolean isValid() {
-    return synced;
-  }
-  
   public void invalidate() {
-    synced = false;
+    mController.queueOutputMessage(this);
   }
   
-  public void validate() {
-    synced = true;
-  }
-  
-  public byte[] getMessage(){
+  public byte[] toBytes(){
     return message;
   }  
 }

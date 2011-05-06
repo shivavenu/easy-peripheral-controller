@@ -14,6 +14,7 @@ public class AdkRelay extends AdkMessage implements DigitalOutput {
   DemoKit mController;
   
   public AdkRelay(DemoKit controller) {
+    super(controller);
     mController = controller;
     mController.register(this);
   }

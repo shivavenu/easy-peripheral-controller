@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Extend the adkcontroller to deal with connecting directly to 18 servos.
@@ -31,6 +32,7 @@ public class ServoXVIII extends AdkController {
   DeviceSync dSync;
 
   List<AdkMessage> controlledDevices = new LinkedList<AdkMessage>();
+  LinkedBlockingQueue<AdkMessage> outputQueue = new LinkedBlockingQueue<AdkMessage>();
   private final Object controlledDevicesLock = new Object();
   
   public ServoXVIII(InputStream in, OutputStream out) {
@@ -98,6 +100,7 @@ public class ServoXVIII extends AdkController {
     
     
     public XVIIIServo(ServoXVIII controller) {
+      super(controller);
       controller.register(this);
     }
     
@@ -120,6 +123,14 @@ public class ServoXVIII extends AdkController {
         invalidate();
     }
   }
+  
+  
+  @Override 
+  public void queueOutputMessage(AdkMessage message){
+    if (! outputQueue.contains(message) ) {
+      outputQueue.offer(message);
+    }
+  }
 
   /**
    * An outgoing spooler thread, that scans the registered peripherals and 
@@ -128,34 +139,25 @@ public class ServoXVIII extends AdkController {
    * Can throttle bandwidth _to_ the controller board here.
    *
    */
-  public class DeviceSync extends Thread{
+ public class DeviceSync extends Thread{
     
     private boolean running = true;
     private int failures = 0;
     
     @Override
     public void run() {      
+      AdkMessage message;
       while (running) {
         try {
+          message = outputQueue.take();
           if (getOutputStream() != null) {
-          // Clearly this can be optimized. so do it.
-            synchronized (controlledDevicesLock) {
-              for (AdkMessage device : controlledDevices) {
-                if (!device.isValid()) {
-                  // Log.d(TAG, "sending control msg : " + printBytes(device.getMessage()));
-                  getOutputStream().write(device.getMessage());
-                  device.validate();
-                  failures = 0;
-                }
-              }              
-            }
+           getOutputStream().write(message.toBytes());
           }
-        //  Thread.yield();
-          try {
-            Thread.sleep(10);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
+          else {
+            running = false;
           }
+        } catch (InterruptedException e) {
+          e.printStackTrace();
         }
         catch (IOException e) {
           e.printStackTrace();
@@ -168,6 +170,7 @@ public class ServoXVIII extends AdkController {
           //}
         }
       }
+      Log.d(TAG, "Exiting sync thread");
     }
   }
   

@@ -11,12 +11,13 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.google.robotics.peripheral.connector.AccessoryConnector;
 import com.google.robotics.peripheral.connector.ConnectionListener;
 import com.google.robotics.peripheral.device.Joystick;
 import com.google.robotics.peripheral.device.LightSensor;
@@ -31,6 +32,10 @@ public class KitchenSinkExample extends Activity {
   private TestView mTestView;
   private DemoKit adk;
   
+  private float mScreenWidth = 1280;
+  private float mScreenHeight = 960;
+  private float mScreenOrientation = 1;
+  
   private JoystickHandler mJoystickHandler;   
 
   /** Called when the activity is first created.; */
@@ -43,19 +48,33 @@ public class KitchenSinkExample extends Activity {
     setContentView(mTestView);
     mTestView.requestFocus();
 
-    mJoystickHandler = new JoystickHandler(mTestView);
-    adk = new DemoKit(this, connectionListener);
     
     logIt("created");
   }
 
   public void onResume() {
     super.onResume();
+    /* First, get the Display from the WindowManager */
+    Display display = ((WindowManager) getSystemService(WINDOW_SERVICE)).getDefaultDisplay();
+
+    /* Now we can retrieve all display-related infos */
+    mScreenWidth = display.getWidth();
+    mScreenHeight = display.getHeight();
+    mScreenOrientation = display.getOrientation();
+    
+
+    mJoystickHandler = new JoystickHandler(mTestView);
+    adk = new DemoKit(this, connectionListener);
   }
 
+  public void onPause() {
+    adk.onDestroy();
+    super.onPause();
+  }
+  
   @Override
   public void onDestroy() {
-    adk.onDestroy();
+   
     super.onDestroy();
   }
   
@@ -97,8 +116,8 @@ public class KitchenSinkExample extends Activity {
       
       if (adk.isConnected()){
     	 
-        float xfactor = (float) (lastTouch.x / 1280f);
-        float yfactor = (float) (lastTouch.y / 720f);
+        float xfactor = (float) (lastTouch.x / mScreenWidth);
+        float yfactor = (float) (lastTouch.y / mScreenHeight);
 
         adk.getServo(0).setPosition(xfactor);
         adk.getServo(1).setPosition(yfactor);

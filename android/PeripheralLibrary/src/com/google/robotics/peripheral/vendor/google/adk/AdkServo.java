@@ -17,11 +17,9 @@ public class AdkServo extends AdkMessage implements Servo {
   int maxWidth = 2000;
   int minWidth = 1000;  
   int pulseWidth = 1500;
-  
-  protected AdkController mController;
-  
+ 
   public AdkServo(DemoKit controller) {
-    mController = controller;
+    super(controller);
     controller.register(this);    
     invalidate();
   }

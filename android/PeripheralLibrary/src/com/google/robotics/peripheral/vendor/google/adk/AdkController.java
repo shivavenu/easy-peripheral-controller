@@ -9,9 +9,9 @@ import android.util.Log;
 
 import com.google.robotics.peripheral.connector.AccessoryConnector;
 import com.google.robotics.peripheral.connector.ConnectionListener;
-import com.google.robotics.peripheral.connector.PeripheralConnector;
 import com.google.robotics.peripheral.vendor.arduino.ArduinoMega;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -129,9 +129,20 @@ public abstract class AdkController extends ArduinoMega implements ConnectionLis
     new ConnectionPoll().execute();
   }
   
+  public void queueOutputMessage(AdkMessage message) {
+    try {
+      if (isConnected()) {
+        getOutputStream().write(message.toBytes());
+      }  
+    } catch (IOException e) {
+      throw new RuntimeException("Connection to ADK broken");
+    }
+  }
+  
   public class ConnectionPoll extends AsyncTask<Void, Void, Void> {
     @Override
     protected Void doInBackground(Void... params) {
+      Log.d(TAG, "Starting polling task");
       if (mState == AccessoryState.DISCONNECTED) {
         mState = AccessoryState.CONNECTING;
         try {
@@ -145,7 +156,7 @@ public abstract class AdkController extends ArduinoMega implements ConnectionLis
           try {
             // TODO, consider having some backoff here.           
             mConnector.connect();
-            Thread.sleep(500);
+            Thread.sleep(5000);
           } catch (InterruptedException e) {
             e.printStackTrace();
           }
