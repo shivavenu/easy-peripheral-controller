@@ -124,7 +124,6 @@ public class ServoXVIII extends AdkController {
     }
   }
   
-  
   @Override 
   public void queueOutputMessage(AdkMessage message){
     if (! outputQueue.contains(message) ) {

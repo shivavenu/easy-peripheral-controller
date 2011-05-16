@@ -82,7 +82,6 @@ public class ServoExample extends Activity {
 
       public void disconnected() {
         Log.d(TAG, "Disconnected");
-        adk = null;        
       }
     };
 }

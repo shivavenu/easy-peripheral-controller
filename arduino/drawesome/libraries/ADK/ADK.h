@@ -13,15 +13,16 @@
 #include <WProgram.h>
 #include <Wire.h>
 
+// NOTE: these includes have to appear in the sketch too, otherwise the 
+// arduino doesnt seem to setup the INCLUDE path right? arduino-fu needed.
 #include <Max3421e.h>
 #include <Max3421e_constants.h>
 #include <Max_LCD.h>
 #include <Usb.h>
 #include <AndroidAccessory.h>
+#include <Servo.h>
 
-// remove?
 #include <HardwareSerial.h>
-
 
 #define ADK_OP_RESET            0x00
 #define ADK_OP_DIGITAL_READ     0x01
@@ -38,6 +39,8 @@
 #define ADK_OP_SERIAL_BEGIN     0x0C
 #define ADK_OP_SERIAL_READ      0x0D
 #define ADK_OP_SERIAL_WRITE     0x0E
+
+#define ADK_OP_SERVO_OP         0x0F
 
 #define ADK_OP_TWI_ACTION       0x1B
 #define ADK_OP_TWI_BEGIN        0x1C
@@ -60,20 +63,24 @@ private:
   bool _loggingEnabled;
   HardwareSerial *_loggingOut;
   
-  
   // Input Buffer for reading from the USB.
   char _input_buffer[32]; // TODO(arshan) : tune this number.
   int _current;
   int _max;
 
+  // Handling for servo library
+  Servo _servo_array[48]; // MAX number of servos here
+
+
   //------
   // Consolidate communications calls we we can swap them out.
   //------
   int availableChar();
-  char readChar(); // cached char read, can block 
+  char readChar(); // non-blocking, returns NULL if none available
   int fillInputBuffer();
-  char blockingReadChar();
+  char blockingReadChar(); // will block if none available 
   void writeBytes(byte *buf, int size);
+  // End communications calls
 
   void adkOpDigitalWrite(char pin, int value);
   void adkOpAnalogWrite(char pin, int value);
@@ -89,6 +96,11 @@ private:
   void doTwiWrite(char opCode, int msgSize);
   void do0ArgOp(char opCode, int msgSize);
   void doOpNotImplemented(char opCode, int msgSize);
+
+  void doServoOp(char opCode, int msgSize);
+  void doServoInit(int servo, int pin);
+  void setServoPulse(int servo, unsigned int usec);
+  void tearDownServo(int servo);
 
   bool loggingEnabled();
   void log(char *str);
@@ -117,6 +129,8 @@ public:
    * Send a string to the host. Useful for debugging.
    */
   void serialWrite(char *str);
+
+
 };
 
 #endif

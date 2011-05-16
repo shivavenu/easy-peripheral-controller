@@ -2,9 +2,13 @@
   ADK.cpp - Library for interfacing with Android device
   Created by Buck Clay, April 12, 2011.
   Copyright 2011 Google Inc. All Rights Reserved.
+
+  TODO(arshan): update all the license info
  */
 
 #include "ADK.h"
+
+#define DEBUG 1
 
 ADK::ADK(AndroidAccessory &droid) {
   this->_droid = &droid;
@@ -37,6 +41,8 @@ ADK::ADK(AndroidAccessory &droid) {
   _opCodeHandlers[ADK_OP_TWI_READ]         = &ADK::doTwiRead;
   _opCodeHandlers[ADK_OP_TWI_WRITE]        = &ADK::doTwiWrite;
   _opCodeHandlers[ADK_OP_REGISTER_OP]      = &ADK::doRegisterOp;
+  _opCodeHandlers[ADK_OP_SERVO_OP]         = &ADK::doServoOp;
+
 }
 
 
@@ -58,9 +64,9 @@ void ADK::enableLogging(bool enable) {
 
 
 void ADK::setLoggingOutput(HardwareSerial &sout) {
-#ifdef DEBUG
+
   this->_loggingOut = &sout;
-#endif
+
 }
 
 /**
@@ -81,7 +87,6 @@ void ADK::checkForInput() {
   if (header == NULL) {   
     return;
   }
-
   
   bool varMsgSize = header & 0x80;
   int msgSize = (header & 0x60) >> 5;
@@ -91,14 +96,14 @@ void ADK::checkForInput() {
     msgSize = readChar();
   }
 
-#ifdef DEBUG
+
   // DEBUG printing.
-  if (loggingEnabled()) {
+
      char buf[80];
      sprintf(buf, "incoming command. OP_CODE: 0x%x : %d\n", opCode,  msgSize );
      log(buf);
-  }
-#endif
+
+
 
   // Choose a continue function based on OP_CODE.
   void (ADK::*opCodeFunc)(char, int) = _opCodeHandlers[opCode];
@@ -146,13 +151,13 @@ int ADK::fillInputBuffer() {
 		      sizeof(_input_buffer), 
 		      1);
   _current = 0;
-#ifdef DEBUG
+
   if (_max > 0) {
     char buf[80];
     sprintf(buf, "filled the input buffer: %d\n", _max);
-    log(buf);
+    Serial.print(buf);
   }
-#endif
+
   if (_max < 0) {
     // this means there was an error in reading ... reset something?
     _max = 0;
@@ -304,6 +309,31 @@ void ADK::doRegisterOp(char opCode, int msgSize) {
   }
 }
 
+void ADK::doServoOp(char opCode, int msgSize) {
+  char servoOp = readChar();
+  char servoNum = servoOp & 0x3F;
+  servoOp >>= 6;
+  char pin = readChar();
+  byte high = readChar();
+  byte low = readChar();
+  unsigned int usec = high << 8 | low;
+
+  switch (servoOp) {
+  case 0x00: // setup servo
+    doServoInit(servoNum, pin);
+  case 0x01: // set servo pulse
+    setServoPulse(servoNum, usec);
+    break;
+  case 0x02: // tear down servo
+    tearDownServo(servoNum);
+    break;
+  default:
+    break;
+    // no op, error message method is called for though
+  }
+
+}
+
 void ADK::doSerialWrite(char opCode, int msgSize) {
   // TODO(clayb): actually look at the options.
   char options = blockingReadChar();
@@ -338,4 +368,21 @@ void ADK::doTwiWrite(char opCode, int msgSize) {
     Wire.send(blockingReadChar());
   }
   Wire.endTransmission();
+}
+
+// initialize a servo in the array
+void ADK::doServoInit(int servo, int pin) {
+  Serial.print("servo init\n");
+  _servo_array[servo].attach(pin);
+}
+
+// set a servo pulse width in the array
+void ADK::setServoPulse(int servo, unsigned int usec) {
+
+  _servo_array[servo].writeMicroseconds(usec);
+}
+
+void ADK::tearDownServo(int servo) {
+  Serial.print("tear down\n");
+  _servo_array[servo].detach();
 }

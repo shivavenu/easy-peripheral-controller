@@ -5,6 +5,7 @@
 #include <Max_LCD.h>
 #include <Usb.h>
 #include <AndroidAccessory.h>
+#include <Servo.h>
 #include <ADK.h>
 
 AndroidAccessory acc(
@@ -16,36 +17,40 @@ AndroidAccessory acc(
    "0000000012345678");
    
    
+Servo servotest;
+
 ADK adk(acc);
 
 void setup() {
   Serial.begin(115200);
-  adk.enableLogging(true);
-  adk.setLoggingOutput(Serial);
+//  adk.enableLogging(true);
+//  adk.setLoggingOutput(Serial);
 
   acc.powerOn();
   adk.init();
 
+  servotest.attach(46);
+  
   // Show a sign of life.
-  pinMode(7, OUTPUT);
-  analogWrite(7, 0xFE);
-
-  pinMode(6, OUTPUT);
+  pinMode(13, OUTPUT);
 }
 
 bool amConnected = false;
 void loop() {
 
+  
   if (acc.isConnected()) {
     // so this is broken because ... 
     // the check for input blocks til char comes in
     // so we are heartbeating the thing from android space. 
     // have to change this to interrupt out or some such.
+    servotest.detach();
     adk.checkForInput();
-    digitalWrite(6, LOW);
+    digitalWrite(13, LOW);
   }
   else {
-    digitalWrite(6, HIGH);
+    servotest.write(90);
+    digitalWrite(13, HIGH);
     delay(100);
   }
   

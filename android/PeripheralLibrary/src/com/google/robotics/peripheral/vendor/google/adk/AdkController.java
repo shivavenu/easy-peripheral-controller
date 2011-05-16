@@ -51,6 +51,7 @@ public abstract class AdkController extends ArduinoMega implements ConnectionLis
    */
   public AdkController(Context context, ConnectionListener listener) {
     mConnector = new AccessoryConnector(context, ACCESSORY_STRING, this);
+    mOutputStream = new SnoopedOutput();
     setListener(listener);
     startPolling();
   }
@@ -79,6 +80,45 @@ public abstract class AdkController extends ArduinoMega implements ConnectionLis
   public OutputStream getOutputStream() {
 	  return mOutputStream;
   }
+  
+  public class SnoopedOutput extends OutputStream {
+    
+    OutputStream wrapped;
+
+    public SnoopedOutput() {
+      wrapped = null;
+    }
+    
+    public SnoopedOutput(OutputStream wrap) {
+      wrapped = wrap;
+    }
+    
+    /* (non-Javadoc)
+     * @see java.io.OutputStream#write(int)
+     */
+    @Override
+    public void write(int oneByte) throws IOException {
+      Log.d(TAG, "writing : " + oneByte);
+      if (wrapped != null) {
+        wrapped.write(oneByte);      
+      }
+    }
+   
+    public void write(byte[] arr, int offset, int len) throws IOException {
+      logArr(arr, offset, len);
+      if (wrapped != null) {
+        wrapped.write(arr, offset, len);
+      }
+    }
+    
+    public void logArr(byte[] arr, int off, int len) {
+      String str = "";
+      for (int x = off; x < len+off; x++) {
+        str += "0x"+Integer.toHexString(arr[x]&0xFF)+".";                
+      }
+      Log.d(TAG, str);
+    }
+  }
 
   /**
    * Override this method to do something when connected.
@@ -90,7 +130,7 @@ public abstract class AdkController extends ArduinoMega implements ConnectionLis
     }
     Log.d(TAG, "Connected");
     mInputStream = mConnector.getInputStream();
-    mOutputStream = mConnector.getOutputStream();
+    mOutputStream = new SnoopedOutput(mConnector.getOutputStream());
     mState = AccessoryState.CONNECTED;
     mListener.connected(accessory);
   }
