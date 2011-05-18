@@ -6,7 +6,7 @@ package com.google.robotics.peripheral.device;
  * @author arshan@google.com (Your Name Here)
  *
  */
-public interface Servo {
+public interface Servo extends Reservable {
 
   /**
    * Position of the servo relative to the bounds.

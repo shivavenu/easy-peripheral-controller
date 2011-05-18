@@ -2,7 +2,9 @@
 
 package com.google.robotics.peripheral.vendor.google.adk;
 
-import java.io.IOException;
+import android.util.Log;
+
+import com.google.robotics.peripheral.util.AbstractResource;
 
 /**
  * Keep some simple info that all 'controlled' devices have to keep track of
@@ -11,7 +13,7 @@ import java.io.IOException;
  * @author arshan@google.com (Arshan Poursohi)
  *
  */
-public class AdkMessage {
+public class AdkMessage extends AbstractResource {
 
   private byte[] message = new byte[3];
   private AdkController mController;

@@ -3,53 +3,44 @@
 package com.google.robotics.peripheral.vendor.google.drawesome;
 
 import com.google.robotics.peripheral.device.AnalogInput;
-import com.google.robotics.peripheral.util.ChangeListener;
+import com.google.robotics.peripheral.util.AbstractInputResource;
 import com.google.robotics.peripheral.util.Pin;
 
 /**
  * @author arshan@google.com (Arshan Poursohi)
  *
  */
-public class AwesomeAnalogInput implements AnalogInput {
+public class AwesomeAnalogInput extends AbstractInputResource implements AnalogInput {
 
+  float mValue;
+  float mReference = 3.3f;
+  private Pin mPin;
+  
   public AwesomeAnalogInput(DrAwesome theDoctor, Pin pin) {
-    
+    mPin = pin;
+    mPin.reserve(this);
   }
 
-  /* (non-Javadoc)
-   * @see com.google.robotics.peripheral.util.ChangeNotifier#registerListener(com.google.robotics.peripheral.util.ChangeListener)
-   */
-  @Override
-  public void registerListener(ChangeListener listener) {
-    // TODO Auto-generated method stub
-    
-  }
-
-  /* (non-Javadoc)
-   * @see com.google.robotics.peripheral.util.ChangeNotifier#unregisterListener(com.google.robotics.peripheral.util.ChangeListener)
-   */
-  @Override
-  public void unregisterListener(ChangeListener listener) {
-    // TODO Auto-generated method stub
-    
-  }
-
-  /* (non-Javadoc)
-   * @see com.google.robotics.peripheral.device.AnalogInput#getValue()
-   */
   @Override
   public float getValue() {
-    // TODO Auto-generated method stub
-    return 0;
+    return mValue;
+  }
+  
+  protected void setValue(float fl) {
+    mValue = fl;
+    notifyListeners();
   }
 
-  /* (non-Javadoc)
-   * @see com.google.robotics.peripheral.device.AnalogInput#getReference()
-   */
+  
   @Override
   public float getReference() {
-    // TODO Auto-generated method stub
-    return 0;
+    return mReference;
+  }
+  
+  @Override
+  public void release() {
+    mPin.release(this);
+    super.release();
   }
   
 }

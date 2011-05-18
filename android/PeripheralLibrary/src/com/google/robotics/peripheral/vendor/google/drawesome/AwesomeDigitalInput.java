@@ -3,45 +3,37 @@
 package com.google.robotics.peripheral.vendor.google.drawesome;
 
 import com.google.robotics.peripheral.device.DigitalInput;
-import com.google.robotics.peripheral.util.ChangeListener;
+import com.google.robotics.peripheral.util.AbstractInputResource;
 import com.google.robotics.peripheral.util.Pin;
 
 /**
  * @author arshan@google.com (Arshan Poursohi)
- *
+ * 
  */
-public class AwesomeDigitalInput implements DigitalInput {
+public class AwesomeDigitalInput extends AbstractInputResource implements DigitalInput {
+
+  private boolean mValue;
+  private Pin mPin;
 
   public AwesomeDigitalInput(DrAwesome theDoctor, Pin pin) {
-    
+    mPin = pin;
+    mPin.reserve(this);
   }
 
-  /* (non-Javadoc)
-   * @see com.google.robotics.peripheral.util.ChangeNotifier#registerListener(com.google.robotics.peripheral.util.ChangeListener)
-   */
-  @Override
-  public void registerListener(ChangeListener listener) {
-    // TODO Auto-generated method stub
-    
+  public void setValue(boolean val) {
+    mValue = val;
+    this.notifyListeners();
   }
 
-  /* (non-Javadoc)
-   * @see com.google.robotics.peripheral.util.ChangeNotifier#unregisterListener(com.google.robotics.peripheral.util.ChangeListener)
-   */
-  @Override
-  public void unregisterListener(ChangeListener listener) {
-    // TODO Auto-generated method stub
-    
-  }
-
-  /* (non-Javadoc)
-   * @see com.google.robotics.peripheral.device.DigitalInput#getValue()
-   */
   @Override
   public boolean getValue() {
-    // TODO Auto-generated method stub
-    return false;
+    return mValue;
   }
-  
-}
 
+  @Override
+  public void release() {
+    super.release();
+    mPin.release(this);
+  }
+
+}

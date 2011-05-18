@@ -94,7 +94,6 @@ public class DemoKit extends AdkController implements Runnable, ConnectionListen
       servos[x] = new AdkServo(this);
       servos[x].setPrefix(0x2);
       servos[x].setId(0x10+x);
-      servos[x].setBounds(1200, 1800);
       
       rgb[x] = new AdkRgbLed(this);
       rgb[x].setPrefix(0x2);

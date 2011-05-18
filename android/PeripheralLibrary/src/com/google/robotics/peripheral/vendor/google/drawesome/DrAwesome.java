@@ -12,6 +12,7 @@ import com.google.robotics.peripheral.device.DigitalInput;
 import com.google.robotics.peripheral.device.DigitalOutput;
 import com.google.robotics.peripheral.device.PwmOutput;
 import com.google.robotics.peripheral.device.Servo;
+import com.google.robotics.peripheral.util.AbstractResource;
 import com.google.robotics.peripheral.util.Pin;
 import com.google.robotics.peripheral.util.Pin.Capability;
 import com.google.robotics.peripheral.vendor.google.adk.AdkController;
@@ -33,6 +34,7 @@ public class DrAwesome extends AdkController implements Runnable {
   /*
    * Pin Definitions 
    */
+  // Unroll these? ie. DIGITAL_18, DIGITAL_19 ...
   public static final AwesomePin[] DIGITAL;
   public static final AwesomePin[] ANALOG;
   
@@ -67,7 +69,7 @@ public class DrAwesome extends AdkController implements Runnable {
       Pin.Capability.DIGITAL_INPUT, Pin.Capability.DIGITAL_OUTPUT);
 
     // PWM pins
-    for (int x = 2 ; x <= DIGITAL.length; x++) {
+    for (int x = 2 ; x < DIGITAL.length; x++) {
       DIGITAL[x]= new AwesomePin(x, "Digital/Pwm " + x, Pin.Capability.DIGITAL_INPUT, 
         Pin.Capability.DIGITAL_OUTPUT, Pin.Capability.PWM_OUTPUT, Pin.Capability.SERVO_DRIVER);
     }
@@ -190,18 +192,21 @@ public class DrAwesome extends AdkController implements Runnable {
     return new AwesomeServo(this, pin);
   }
 
+  // TODO(arshan): consider finding reporting all the problems, not just the first.
   private void verifyPin(Pin pin, Capability c) {
     if (! (pin instanceof AwesomePin)) {
       throw new IllegalArgumentException("You can only use pins that are defined in DrAwesome");
     }
     
-    if (! pin.supports(Pin.Capability.ANALOG_INPUT)) {
-      throw new IllegalArgumentException("Pin " + pin + " does not support analog input");
-    }
-     
     if (pin.isReserved()) {
       throw new IllegalArgumentException("Pin" + pin + " is already in use");
     }
+    
+    if (! pin.supports(c)) {
+      throw new IllegalArgumentException("Pin " + pin + " does not support analog input");
+    }
+     
+
   }
   
   public synchronized void pinMode(int pin, int mode) throws IOException {
@@ -279,9 +284,6 @@ public class DrAwesome extends AdkController implements Runnable {
     getOutputStream().write(mWriteBuffer, 0, 5);
   }
   
-  public void digitalWatch(int pin, int period) throws IOException {
-    // TBI
-  }
 
   /**
    * Run method handles all the incoming messages from the board.
@@ -375,8 +377,12 @@ public class DrAwesome extends AdkController implements Runnable {
       case OP_ANALOG_WRITE:        
         int pin = message.payload[0] & 0x3F;
         int value = (message.payload[1] & 0xFF) | ((message.payload[0] & 0xC0) << 2);
-        Log.d(TAG, "analog : " + pin + " = " + value );
-        //         mAnalogInput[pin].setValue(value);
+    
+        for (AbstractResource res : ANALOG[pin].getResourcesAttached() ) {
+            if (res instanceof AwesomeAnalogInput) {
+              ((AwesomeAnalogInput)res).setValue(value);
+            }
+        }
         break;
       
       case OP_DIGITAL_WRITE:

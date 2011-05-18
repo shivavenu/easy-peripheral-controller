@@ -2,14 +2,14 @@
 
 package com.google.robotics.peripheral.util;
 
-import com.google.robotics.peripheral.device.Controller;
-import com.google.robotics.peripheral.device.Reservable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author arshan@google.com (Arshan Poursohi)
  *
  */
-public class Pin implements Reservable {
+public class Pin {
   
   public enum Capability {
     NONE          (0x0000),
@@ -40,7 +40,7 @@ public class Pin implements Reservable {
   private int mCapabilities;
   private int mId;
   private String mName;
-  private boolean mReserved;
+  private List<AbstractResource> mResources = new ArrayList<AbstractResource>();
   
   public Pin(int id, Capability ... capabilities) {
     this(id, "Pin " + id, capabilities);
@@ -58,28 +58,18 @@ public class Pin implements Reservable {
     return (mCapabilities & c.getFlag()) > 0;
   }
 
-  /* (non-Javadoc)
-   * @see com.google.robotics.peripheral.device.Reservable#reserve()
-   */
-  @Override
-  public void reserve() {
-    mReserved = true;
+  public void reserve(AbstractResource resource) {
+    if (! mResources.contains(resource)) {
+      mResources.add(resource);
+    }
   }
 
-  /* (non-Javadoc)
-   * @see com.google.robotics.peripheral.device.Reservable#release()
-   */
-  @Override
-  public void release() {
-    mReserved = false;
+  public void release(AbstractResource resource) {
+    mResources.remove(resource);
   }
 
-  /* (non-Javadoc)
-   * @see com.google.robotics.peripheral.device.Reservable#isReserved()
-   */
-  @Override
   public boolean isReserved() {
-    return mReserved;
+    return mResources.size() != 0;
   }
   
   @Override
@@ -90,4 +80,18 @@ public class Pin implements Reservable {
   public int toInteger() {
     return mId;
   }
+  
+  public void onChange() {
+    for (AbstractResource res : mResources) {
+      if (res instanceof AbstractInputResource) {
+        ((AbstractInputResource)res).onChange();
+      }
+    }
+  }
+  
+  public final List<AbstractResource> getResourcesAttached() {
+    return mResources;
+  }
+  
+  
 }

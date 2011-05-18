@@ -69,7 +69,8 @@ private:
   int _max;
 
   // Handling for servo library
-  Servo _servo_array[48]; // MAX number of servos here
+  Servo _servo_array[53]; 
+  // I dont think the arduino can actually support this many but makes resource mgmt easier.
 
 
   //------
