@@ -16,8 +16,6 @@ AndroidAccessory acc(
    "http://www.android.com",
    "0000000012345678");
    
-   
-Servo servotest;
 
 ADK adk(acc);
 
@@ -29,7 +27,6 @@ void setup() {
   acc.powerOn();
   adk.init();
 
-  servotest.attach(46);
   
   // Show a sign of life.
   pinMode(13, OUTPUT);
@@ -44,12 +41,12 @@ void loop() {
     // the check for input blocks til char comes in
     // so we are heartbeating the thing from android space. 
     // have to change this to interrupt out or some such.
-    servotest.detach();
+ 
     adk.checkForInput();
     digitalWrite(13, LOW);
   }
   else {
-    servotest.write(90);
+   
     digitalWrite(13, HIGH);
     delay(100);
   }

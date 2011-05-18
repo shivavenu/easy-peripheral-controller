@@ -9,25 +9,25 @@ import android.os.Message;
  * 
  * @author arshan
  */
-public class AbstractInputResource {
+public abstract class AbstractInputResource {
 
 	 /*
-	  * Simple notifications on change. The concrete implementation had to decide 
+	  * Simple notifications on change. The concrete implementation has to decide 
 	  * when a change has occurred.
 	  */
-	  private LinkedList<Handler> listeners = new LinkedList<Handler>();
+	  private LinkedList<ChangeListener> listeners = new LinkedList<ChangeListener>();
 	  
 	  protected void notifyListeners() {
-		for (Handler listener : listeners ){
-	      listener.sendMessage(Message.obtain(listener, 1, this));
+		for (ChangeListener listener : listeners ){
+	      listener.onChange(this);
 	    }
 	  }
 	  
-	  public void registerHandler(Handler handler) {
+	  public void registerListener(ChangeListener handler) {
 	    listeners.add(handler);
 	  }
 	  
-	  public void unregisterHandler(Handler handler) {
+	  public void unregisterListener(ChangeListener handler) {
 	    listeners.remove(handler);
 	  }
 }

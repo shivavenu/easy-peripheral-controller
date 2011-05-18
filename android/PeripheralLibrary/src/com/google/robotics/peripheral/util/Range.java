@@ -20,8 +20,7 @@ public class Range {
   }
   
   public Range(int min, int max) {
-    this.max = max;
-    this.min = min;
+    setBounds(min,max);
   }
   
   public float toFloat() {
@@ -35,6 +34,15 @@ public class Range {
   
   public void setPosition(int val) {
     current = val;
+  }
+  
+  public void setRelative(float fl) {
+    current = (int)((max-min) * fl) + min;
+  }
+  
+  public void setBounds(int min, int max) {
+    this.max = max;
+    this.min = min;
   }
   
 }

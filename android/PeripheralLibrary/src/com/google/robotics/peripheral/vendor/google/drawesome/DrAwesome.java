@@ -7,23 +7,93 @@ import android.hardware.usb.UsbAccessory;
 import android.util.Log;
 
 import com.google.robotics.peripheral.connector.ConnectionListener;
+import com.google.robotics.peripheral.device.AnalogInput;
+import com.google.robotics.peripheral.device.DigitalInput;
+import com.google.robotics.peripheral.device.DigitalOutput;
+import com.google.robotics.peripheral.device.PwmOutput;
+import com.google.robotics.peripheral.device.Servo;
+import com.google.robotics.peripheral.util.Pin;
+import com.google.robotics.peripheral.util.Pin.Capability;
 import com.google.robotics.peripheral.vendor.google.adk.AdkController;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
 
 /**
  * @author arshan@google.com (Your Name Here)
  * 
- *         - StreamMinder , look for magic pattern in stream, trigger diagnostic
+ *      TODO   - StreamMinder , look for magic pattern in stream, trigger diagnostic
  */
 public class DrAwesome extends AdkController implements Runnable {
 
   public static final String ACCESSORY_STRING = "com.google.android.DrAwesome";
   public static final String TAG = "DrAwesome";
 
+  /*
+   * Pin Definitions 
+   */
+  public static final AwesomePin[] DIGITAL;
+  public static final AwesomePin[] ANALOG;
+  
+  // These actually overlap with the digital pins, but seemed useful for clarity.
+  public static final AwesomePin RX;
+  public static final AwesomePin TX;
+  public static final AwesomePin RX0;
+  public static final AwesomePin TX0;
+  public static final AwesomePin RX1;
+  public static final AwesomePin TX1;
+  public static final AwesomePin RX2;
+  public static final AwesomePin TX2;
+  public static final AwesomePin RX3;
+  public static final AwesomePin TX3;
+
+  public static final AwesomePin SDA;
+  public static final AwesomePin SCL;
+  
+  /*
+   * Setup the available pins.
+   * TODO(arshan): consider breaking these out into implementations for Arduino vs. Mega boards
+   *               when they are available.
+   */
+   static {    
+    
+    DIGITAL = new AwesomePin[54];
+    ANALOG = new AwesomePin[16];
+                            
+    DIGITAL[0]= new AwesomePin(0, "Digital/Rx", 
+      Pin.Capability.DIGITAL_INPUT, Pin.Capability.DIGITAL_OUTPUT);
+    DIGITAL[1] = new AwesomePin(1, "Digital/Tx", 
+      Pin.Capability.DIGITAL_INPUT, Pin.Capability.DIGITAL_OUTPUT);
+
+    // PWM pins
+    for (int x = 2 ; x <= DIGITAL.length; x++) {
+      DIGITAL[x]= new AwesomePin(x, "Digital/Pwm " + x, Pin.Capability.DIGITAL_INPUT, 
+        Pin.Capability.DIGITAL_OUTPUT, Pin.Capability.PWM_OUTPUT, Pin.Capability.SERVO_DRIVER);
+    }
+    
+    // Analog pins
+    for (int x = 0; x < ANALOG.length; x++) {
+      ANALOG[x] = new AwesomePin(x, "Analog " + x, Pin.Capability.ANALOG_INPUT);
+    }
+    
+    // The rest of them.
+    // TODO(arshan): call out the ones that support rx/tx and twi.
+    RX = RX0 = DIGITAL[0];
+    TX = TX0 = DIGITAL[1];
+    RX1 = DIGITAL[19];
+    TX1 = DIGITAL[18];
+    RX2 = DIGITAL[17];
+    TX2 = DIGITAL[16];
+    RX3 = DIGITAL[15];
+    TX3 = DIGITAL[14];
+    SDA = DIGITAL[20];
+    SCL = DIGITAL[21];
+  }
+  
+  /*
+   * Op Codes for the protocol
+   */
   private static final char MSG_SIZE_0 = 0x00 << 5;
   private static final char MSG_SIZE_1 = 0x01 << 5;
   private static final char MSG_SIZE_2 = 0x02 << 5;
@@ -71,10 +141,8 @@ public class DrAwesome extends AdkController implements Runnable {
   public static final int REG_PORT = 0x01;
   public static final int REG_PIN = 0x03;
 
-  private byte[] mWriteBuffer = new byte[16];
-
-  // public static final Pin PWM0 = new Pin();
-
+  private byte[] mWriteBuffer = new byte[16];  
+  
   /**
    * @param ctxt
    */
@@ -84,7 +152,6 @@ public class DrAwesome extends AdkController implements Runnable {
 
   public DrAwesome(Context context, ConnectionListener listener) {
     super(context, listener);
-
   }
 
   @Override
@@ -93,11 +160,50 @@ public class DrAwesome extends AdkController implements Runnable {
     init();
   }
 
-  protected void init() {
-    // must be something?
+  protected void init() {    
+    // Start the input consumer thread. 
     new Thread(this).start();
   }
 
+  public AnalogInput getAnalogInput(Pin pin) {
+    verifyPin(pin, Pin.Capability.ANALOG_INPUT);    
+    return new AwesomeAnalogInput(this, pin);
+  }
+  
+  public DigitalInput getDigitalInput(Pin pin) {
+    verifyPin(pin, Pin.Capability.DIGITAL_INPUT);
+    return new AwesomeDigitalInput(this, pin);
+  }
+
+  public DigitalOutput getDigitalOutput(Pin pin) {
+    verifyPin(pin, Pin.Capability.DIGITAL_OUTPUT);
+    return new AwesomeDigitalOutput(this, pin);
+  }
+  
+  public PwmOutput getPwmOutput(Pin pin) {
+    verifyPin(pin, Pin.Capability.PWM_OUTPUT);
+    return new AwesomePwmOutput(this, pin);
+  }
+
+  public Servo getServo(Pin pin) {
+    verifyPin(pin, Pin.Capability.SERVO_DRIVER);
+    return new AwesomeServo(this, pin);
+  }
+
+  private void verifyPin(Pin pin, Capability c) {
+    if (! (pin instanceof AwesomePin)) {
+      throw new IllegalArgumentException("You can only use pins that are defined in DrAwesome");
+    }
+    
+    if (! pin.supports(Pin.Capability.ANALOG_INPUT)) {
+      throw new IllegalArgumentException("Pin " + pin + " does not support analog input");
+    }
+     
+    if (pin.isReserved()) {
+      throw new IllegalArgumentException("Pin" + pin + " is already in use");
+    }
+  }
+  
   public synchronized void pinMode(int pin, int mode) throws IOException {
     // Consider the util function for sendMessage();
     mWriteBuffer[0] = (MSG_SIZE_1 | OP_PIN_MODE);
@@ -116,29 +222,34 @@ public class DrAwesome extends AdkController implements Runnable {
    * the board returns the value on pin change, or a periodic read that is timed
    * by the board.
    */
-  public synchronized boolean digitalRead(int pin) throws IOException {
-    clearInputBuffers();
+  public synchronized void digitalRead(int pin) throws IOException {
     mWriteBuffer[0] = (MSG_SIZE_1 | OP_DIGITAL_READ);
     mWriteBuffer[1] = (byte) (pin & 0xFF);
     getOutputStream().write(mWriteBuffer, 0, 2);
-
-    // wait on return message ... with timeout?
-    // nope, the return comes via the listener framework
-    return true;
   }
 
 
   // this is a non blocking call that will result in the result
   // coming back over the proto. So your listener can deal with it.
-  public synchronized void analogRead(int pin) {
+  public synchronized void analogRead(int pin) throws IOException {
+   mWriteBuffer[0] = (MSG_SIZE_1 | OP_ANALOG_READ);
+   mWriteBuffer[1] = (byte)(pin & 0xFF);
+   getOutputStream().write(mWriteBuffer, 0, 2);    
   }
 
+  public synchronized void analogWrite(int pin, int value) throws IOException {
+    mWriteBuffer[0] = (MSG_SIZE_2 | OP_ANALOG_WRITE);
+    mWriteBuffer[1] = (byte)((value << 4 | pin) & 0xFF);
+    mWriteBuffer[2] = (byte)((value >> 4) & 0xFF);
+    getOutputStream().write(mWriteBuffer,0,3);
+  }
+  
   /**
    * Servo Control
    */
-  private static final int SERVO_INIT = 0x0;
-  private static final int SERVO_SET = 0x40;
-  private static final int SERVO_TEARDOWN = 0x80;
+  private static final int SERVO_INIT       = 0x00;
+  private static final int SERVO_SET        = 0x40;
+  private static final int SERVO_TEARDOWN   = 0x80;
 
   public synchronized void setupServo(int servoN, int pin, int initUSec) throws IOException {
     log("setup servo " + servoN + " on pin " + pin);
@@ -167,55 +278,62 @@ public class DrAwesome extends AdkController implements Runnable {
     mWriteBuffer[4] = 0;
     getOutputStream().write(mWriteBuffer, 0, 5);
   }
-
-  /*
-   * make sure there is no pending bytes in the input buffer
-   */
-  private void clearInputBuffers() {
-
-  }
-
+  
   public void digitalWatch(int pin, int period) throws IOException {
-    // getOutputStream().write(new byte[]{(MSG_SIZE_N | OP_DIGITAL_WATCH), });
+    // TBI
   }
 
+  /**
+   * Run method handles all the incoming messages from the board.
+   */
   public void run() {
 
     int total = 0;
     byte[] buffer = new byte[16384];
     int current = 0;
+    
+    // This doesnt have legs, should use Message, and use the pooling from android.
     AwesomeMessage message = new AwesomeMessage();
     boolean running = true;
     
       try {
         while (running) {
         total = getInputStream().read(buffer);
-        Log.d(TAG, "read bytes from the board : " + total);
-        printem(buffer, 0, total);
-        
-        current = 0;
-        //while (total < current) {
-        //  current += message.populate(buffer, current, total - current);
-        //  handleMessage(message);
-       // }
+      
+        if (total > 5) { // HACK! take this out.
+          // cheap hack to let syslog messages through
+          printem(buffer, 0, total, true);
+        }
+        else {
+          current = 0;
+          while (current < total) {
+            current += message.populate(buffer, current, total - current);
+            handleMessage(message);
+          }
+        }
         }
       } catch (IOException e) {
         e.printStackTrace();
         // anything we can do to recover here? 
       }
-   
 
     disconnected();
   }
 
 
-  public void printem(byte[] arr, int offset, int len){
+  public void printem(byte[] arr, int offset, int len, boolean string){
     String str = "";
     for (int x = offset; x < offset+len; x++) {
+      if (string) {
       str += (char)arr[x];
+      }
+      else {
+        str += "0x" + Integer.toHexString(arr[x]) + ".";
+      }
     }
     Log.d(TAG, str);    
   }
+  
   
   public class AwesomeMessage {
     public int mOpCode = 0;
@@ -229,34 +347,48 @@ public class DrAwesome extends AdkController implements Runnable {
 
       if (mVariableSize) {
         mSize = buffer[offset + 1];
-        offset += 1;
+        mOpCode = buffer[offset] & 0x7F;
+        offset += 2;
       } else {
         mSize = (buffer[offset] & 0x60) >> 5;
+        mOpCode = buffer[offset] & 0x1F;
         if (mSize == 3) {
           mSize = 4;
         }
+        offset += 1;
       }
 
       if (mSize > size) {
-        throw new RuntimeException("not enough bytes to fill payload, need " + mSize + " but got "
-            + size);
+        throw new RuntimeException("not enough bytes to fill payload, need " 
+          + mSize + " but got " + size);
       }
-
+      
       System.arraycopy(buffer, offset, payload, 0, mSize);
-      return mSize;
+      
+      return mSize+1; // +1 to add the opCode byte back to the number consumed.
     }
   };
 
-  public void handleMessage(AwesomeMessage message) {
+  public void handleMessage(final AwesomeMessage message) {
     switch (message.mOpCode) {
-      case OP_ANALOG_READ:
-      case OP_DIGITAL_READ:
+     
+      case OP_ANALOG_WRITE:        
+        int pin = message.payload[0] & 0x3F;
+        int value = (message.payload[1] & 0xFF) | ((message.payload[0] & 0xC0) << 2);
+        Log.d(TAG, "analog : " + pin + " = " + value );
+        //         mAnalogInput[pin].setValue(value);
+        break;
+      
+      case OP_DIGITAL_WRITE:
+        break;
+        
       case OP_SERVO_READ:
+        break;
     }
   }
   
   protected void log(String msg) {
     Log.d(TAG,msg);
   }
-
+ 
 }

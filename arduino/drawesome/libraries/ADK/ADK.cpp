@@ -8,7 +8,6 @@
 
 #include "ADK.h"
 
-#define DEBUG 1
 
 ADK::ADK(AndroidAccessory &droid) {
   this->_droid = &droid;
@@ -64,9 +63,9 @@ void ADK::enableLogging(bool enable) {
 
 
 void ADK::setLoggingOutput(HardwareSerial &sout) {
-
+#ifdef DEBUG
   this->_loggingOut = &sout;
-
+#endif
 }
 
 /**
@@ -95,14 +94,6 @@ void ADK::checkForInput() {
     // TODO: recover from a bad stream here. 
     msgSize = readChar();
   }
-
-
-  // DEBUG printing.
-
-     char buf[80];
-     sprintf(buf, "incoming command. OP_CODE: 0x%x : %d\n", opCode,  msgSize );
-     log(buf);
-
 
 
   // Choose a continue function based on OP_CODE.
@@ -152,11 +143,13 @@ int ADK::fillInputBuffer() {
 		      1);
   _current = 0;
 
+#ifdef DEBUG
   if (_max > 0) {
     char buf[80];
     sprintf(buf, "filled the input buffer: %d\n", _max);
     Serial.print(buf);
   }
+#endif 
 
   if (_max < 0) {
     // this means there was an error in reading ... reset something?
@@ -198,6 +191,11 @@ void ADK::adkOpDigitalWrite(char pin, int value) {
 }
 
 void ADK::adkOpAnalogWrite(char pin, int value) {
+  
+    char buf[80];
+    sprintf(buf, "sending back analog value: %d %u\n", pin, value);
+    Serial.print(buf);
+
   writeBytes((byte[]) {
       ADK_MSG_SIZE_2 | ADK_OP_ANALOG_WRITE,
       ((value & 0x0300) >> 2) | (pin & 0x3F),

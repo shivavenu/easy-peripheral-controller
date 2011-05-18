@@ -2,15 +2,12 @@
 
 package com.google.robotics.peripheral.util;
 
-import android.os.Handler;
 
 /**
  * 
  * @author arshan@google.com (Arshan Poursohi)
  */
-public interface ChangeNotifier {
-
-  public void registerHandler(Handler handler);
-  public void unregisterHandler(Handler handler);
-  
+public interface ChangeNotifier<T> {
+  public void registerListener(ChangeListener<T> listener);
+  public void unregisterListener(ChangeListener<T> listener);  
 }

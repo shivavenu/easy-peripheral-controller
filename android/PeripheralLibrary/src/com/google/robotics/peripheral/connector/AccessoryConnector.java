@@ -132,7 +132,6 @@ public class AccessoryConnector implements PeripheralConnector {
     return mPermissionRequestPending;
   }
 
-
   private void openIO(UsbAccessory accessory) {
     Log.d(TAG, "openAccessory: " + accessory);
     mFileDescriptor = mUsbManager.openAccessory(accessory);

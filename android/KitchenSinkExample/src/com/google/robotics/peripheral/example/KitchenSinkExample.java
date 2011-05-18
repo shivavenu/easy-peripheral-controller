@@ -21,6 +21,7 @@ import android.widget.Toast;
 import com.google.robotics.peripheral.connector.ConnectionListener;
 import com.google.robotics.peripheral.device.Joystick;
 import com.google.robotics.peripheral.device.LightSensor;
+import com.google.robotics.peripheral.util.ChangeListener;
 import com.google.robotics.peripheral.vendor.google.adk.DemoKit;
 
 public class KitchenSinkExample extends Activity {
@@ -47,7 +48,6 @@ public class KitchenSinkExample extends Activity {
     mTestView = new TestView(this);
     setContentView(mTestView);
     mTestView.requestFocus();
-
     
     logIt("created");
   }
@@ -61,7 +61,6 @@ public class KitchenSinkExample extends Activity {
     mScreenWidth = display.getWidth();
     mScreenHeight = display.getHeight();
     mScreenOrientation = display.getOrientation();
-    
 
     mJoystickHandler = new JoystickHandler(mTestView);
     adk = new DemoKit(this, connectionListener);
@@ -145,8 +144,8 @@ public class KitchenSinkExample extends Activity {
       logIt("connected");
       
       adk.getRelay(0).setValue(true); // if we want to use for on switch.      
-      adk.getLightSensor().registerHandler(lightSensor);
-      adk.getJoystick().registerHandler(mJoystickHandler);      
+      adk.getLightSensor().registerListener(lightSensor);
+      adk.getJoystick().registerListener(mJoystickHandler);      
     }
 
     public void connectionFailed(UsbAccessory accessory) {
@@ -159,28 +158,24 @@ public class KitchenSinkExample extends Activity {
     
   };
   
-  Handler lightSensor = new Handler() {
-    public void handleMessage(Message msg) {
-      LightSensor sensor = (LightSensor)(msg.obj);
+  ChangeListener<LightSensor> lightSensor = new ChangeListener<LightSensor>() {
+    public void onChange(LightSensor sensor){  
       if (adk != null) {
         int val = sensor.getLux() >> 3;
         adk.getLed(1).setColor(val, val, val);
-      
       }
     }
   };
   
-  public class JoystickHandler extends Handler {
+  public class JoystickHandler implements ChangeListener<Joystick> {
     TestView mView;
     
     public JoystickHandler(TestView view) {
       mView = view;
     }
-    public void handleMessage(Message msg) {      
-      Joystick jstick = (Joystick)(msg.obj);
-    //  mView.moveIt((int)(jstick.getX()*1280), (int)(jstick.getY()*960));
+    public void onChange(Joystick jstick) {    
+     // mView.moveIt((int)(jstick.getX()*1280), (int)(jstick.getY()*960));
       Log.d(TAG, "jstick : " + jstick.getX() + "x" + jstick.getY());
-     //  mView.invalidate();
     }
   };
 

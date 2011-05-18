@@ -98,14 +98,14 @@ public abstract class AdkController extends ArduinoMega implements ConnectionLis
      */
     @Override
     public void write(int oneByte) throws IOException {
-      Log.d(TAG, "writing : " + oneByte);
+      // Log.d(TAG, "writing : " + oneByte);
       if (wrapped != null) {
         wrapped.write(oneByte);      
       }
     }
    
     public void write(byte[] arr, int offset, int len) throws IOException {
-      logArr(arr, offset, len);
+      // logArr(arr, offset, len);
       if (wrapped != null) {
         wrapped.write(arr, offset, len);
       }
