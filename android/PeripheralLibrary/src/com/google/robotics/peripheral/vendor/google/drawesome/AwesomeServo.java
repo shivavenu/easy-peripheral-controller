@@ -28,9 +28,10 @@ public class AwesomeServo extends AbstractResource implements Servo {
     reserve();
     try {
       mController.setupServo(mNum, pin.toInteger(), 0);
+      setOperational(true);
     } catch (IOException e) {
       setOperational(false);
-      e.printStackTrace(); // servo wont work.
+      e.printStackTrace(); 
     }
   }
 
@@ -69,6 +70,11 @@ public class AwesomeServo extends AbstractResource implements Servo {
     setOperational(false);
     mPin.release(this);
     super.release();
+  }
+  
+
+  public Pin getPin() {
+    return mPin;
   }
   
 }

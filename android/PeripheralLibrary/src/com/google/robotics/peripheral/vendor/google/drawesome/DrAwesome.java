@@ -6,6 +6,7 @@ import android.content.Context;
 import android.hardware.usb.UsbAccessory;
 import android.util.Log;
 
+import com.google.robotics.peripheral.channel.TwiChannel;
 import com.google.robotics.peripheral.connector.ConnectionListener;
 import com.google.robotics.peripheral.device.AnalogInput;
 import com.google.robotics.peripheral.device.DigitalInput;
@@ -13,6 +14,7 @@ import com.google.robotics.peripheral.device.DigitalOutput;
 import com.google.robotics.peripheral.device.PwmOutput;
 import com.google.robotics.peripheral.device.Servo;
 import com.google.robotics.peripheral.util.AbstractResource;
+import com.google.robotics.peripheral.util.Bus;
 import com.google.robotics.peripheral.util.Pin;
 import com.google.robotics.peripheral.util.Pin.Capability;
 import com.google.robotics.peripheral.vendor.google.adk.AdkController;
@@ -53,6 +55,8 @@ public class DrAwesome extends AdkController implements Runnable {
   public static final AwesomePin SDA;
   public static final AwesomePin SCL;
   
+  private static final Bus TWI_BUS = new Bus("TWI Bus",Pin.Capability.TWI);
+
   /*
    * Setup the available pins.
    * TODO(arshan): consider breaking these out into implementations for Arduino vs. Mega boards
@@ -69,9 +73,15 @@ public class DrAwesome extends AdkController implements Runnable {
       Pin.Capability.DIGITAL_INPUT, Pin.Capability.DIGITAL_OUTPUT);
 
     // PWM pins
-    for (int x = 2 ; x < DIGITAL.length; x++) {
+    for (int x = 2 ; x < 47; x++) {
       DIGITAL[x]= new AwesomePin(x, "Digital/Pwm " + x, Pin.Capability.DIGITAL_INPUT, 
         Pin.Capability.DIGITAL_OUTPUT, Pin.Capability.PWM_OUTPUT, Pin.Capability.SERVO_DRIVER);
+    }
+    
+    // Not sure why but these higher pins dont work with servo code
+    for (int x = 47 ; x < DIGITAL.length; x++) {
+      DIGITAL[x]= new AwesomePin(x, "Digital/Pwm " + x, Pin.Capability.DIGITAL_INPUT, 
+        Pin.Capability.DIGITAL_OUTPUT, Pin.Capability.PWM_OUTPUT);
     }
     
     // Analog pins
@@ -191,6 +201,15 @@ public class DrAwesome extends AdkController implements Runnable {
     verifyPin(pin, Pin.Capability.SERVO_DRIVER);
     return new AwesomeServo(this, pin);
   }
+  
+  /*
+   *
+   * needs support for enumerated channels downstream.
+   */
+  public TwiChannel getTwiChannel() throws IOException {
+        beginTwi();
+        return new AwesomeTwiChannel(this, TWI_BUS);
+  }
 
   // TODO(arshan): consider finding reporting all the problems, not just the first.
   private void verifyPin(Pin pin, Capability c) {
@@ -203,7 +222,7 @@ public class DrAwesome extends AdkController implements Runnable {
     }
     
     if (! pin.supports(c)) {
-      throw new IllegalArgumentException("Pin " + pin + " does not support analog input");
+      throw new IllegalArgumentException("Pin " + pin + " does not support " + c);
     }
      
 
@@ -272,6 +291,8 @@ public class DrAwesome extends AdkController implements Runnable {
     mWriteBuffer[2] = 0;
     mWriteBuffer[3] = (byte) (uSec >> 8);
     mWriteBuffer[4] = (byte) (uSec & 0xFF);
+    Log.d(TAG, "meant to do : " + uSec + " on " + servoN);
+    printem(mWriteBuffer, 0, 5, false);
     getOutputStream().write(mWriteBuffer, 0, 5);
   }
 
@@ -285,6 +306,29 @@ public class DrAwesome extends AdkController implements Runnable {
   }
   
 
+  /*
+   * TWI methods.
+   */
+  public synchronized void beginTwi() throws IOException {
+    mWriteBuffer[0] = (MSG_SIZE_0 | OP_TWI_BEGIN);
+    getOutputStream().write(mWriteBuffer, 0, 1);
+  }
+  
+  public synchronized void writeTwi(int addr, byte[] arr, int offset, int length) throws IOException {
+    mWriteBuffer[0] = (byte)(MSG_SIZE_N | OP_TWI_WRITE);
+    mWriteBuffer[1] = (byte)(length & 0xFF);
+    mWriteBuffer[2] = (byte)(addr & 0xFF);
+    System.arraycopy(arr, offset, mWriteBuffer, 3, length);
+    getOutputStream().write(mWriteBuffer, 0, length+3);
+  }
+  
+  public synchronized void readTwi(int addr, int length) throws IOException {
+    mWriteBuffer[0] = (byte)(MSG_SIZE_2 | OP_TWI_READ);
+    mWriteBuffer[1] = (byte) (addr & 0xFF);
+    mWriteBuffer[2] = (byte) (length & 0xFF);
+    getOutputStream().write(mWriteBuffer, 0, 3);
+  }
+  
   /**
    * Run method handles all the incoming messages from the board.
    */
@@ -322,7 +366,6 @@ public class DrAwesome extends AdkController implements Runnable {
     disconnected();
   }
 
-
   public void printem(byte[] arr, int offset, int len, boolean string){
     String str = "";
     for (int x = offset; x < offset+len; x++) {
@@ -334,8 +377,7 @@ public class DrAwesome extends AdkController implements Runnable {
       }
     }
     Log.d(TAG, str);    
-  }
-  
+  }  
   
   public class AwesomeMessage {
     public int mOpCode = 0;
@@ -386,8 +428,19 @@ public class DrAwesome extends AdkController implements Runnable {
         break;
       
       case OP_DIGITAL_WRITE:
+        int dpin = message.payload[0] & 0x7f;
+        boolean val = (message.payload[0] & 0x80) > 0; 
+        
+        for (AbstractResource res : DIGITAL[dpin].getResourcesAttached() ) {
+          if (res instanceof AwesomeDigitalInput) {
+            ((AwesomeDigitalInput)res).setValue(val);
+          }
+        } 
         break;
         
+      case OP_TWI_WRITE:
+        TWI_BUS.incoming(message.payload[0], message.payload, 1, message.mSize-1);
+        break;
       case OP_SERVO_READ:
         break;
     }

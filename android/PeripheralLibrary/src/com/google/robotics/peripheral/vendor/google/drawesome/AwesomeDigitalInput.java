@@ -36,4 +36,8 @@ public class AwesomeDigitalInput extends AbstractInputResource implements Digita
     mPin.release(this);
   }
 
+  public Pin getPin() {
+    return mPin;
+  }  
+  
 }

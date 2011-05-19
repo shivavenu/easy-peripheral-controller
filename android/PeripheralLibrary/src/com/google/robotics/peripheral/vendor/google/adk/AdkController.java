@@ -62,9 +62,6 @@ public abstract class AdkController extends ArduinoMega implements ConnectionLis
     mOutputStream = out;       
   }
  
-  
-  
-  // TEMPORARY TO TRY OUT AN EXPERIMENT
   private  AccessoryConnector getConnector() {
     return mConnector;
   }
@@ -120,6 +117,14 @@ public abstract class AdkController extends ArduinoMega implements ConnectionLis
     }
   }
 
+  
+  /**
+   * for debug help
+   */
+  public void __attach__debug() {
+    mOutputStream = new SnoopedOutput(getOutputStream());
+  }
+  
   /**
    * Override this method to do something when connected.
    */
@@ -130,7 +135,7 @@ public abstract class AdkController extends ArduinoMega implements ConnectionLis
     }
     Log.d(TAG, "Connected");
     mInputStream = mConnector.getInputStream();
-    mOutputStream = new SnoopedOutput(mConnector.getOutputStream());
+    mOutputStream = mConnector.getOutputStream();
     mState = AccessoryState.CONNECTED;
     mListener.connected(accessory);
   }

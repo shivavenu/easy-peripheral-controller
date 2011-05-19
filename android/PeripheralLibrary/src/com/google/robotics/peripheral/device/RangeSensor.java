@@ -10,4 +10,8 @@ import com.google.robotics.peripheral.util.ChangeNotifier;
  */
 public interface RangeSensor extends ChangeNotifier {
 
+  /**
+   * return range from sensor in centimeters
+   */
+  public float getRange(); 
 }

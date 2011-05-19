@@ -45,5 +45,11 @@ public class AwesomePwmOutput implements PwmOutput {
     
     
   }
+
+  
+  public Pin getPin() {
+    return mPin;
+  }
+  
   
 }

@@ -119,7 +119,6 @@ public class DemoKit extends AdkController implements Runnable, ConnectionListen
     dSync = new DeviceSync();
     dSync.start();    
   }
-  
 
   public Servo getServo(int num) {
     return servos[num];

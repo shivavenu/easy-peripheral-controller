@@ -26,8 +26,8 @@ public class AwesomeAnalogInput extends AbstractInputResource implements AnalogI
     return mValue;
   }
   
-  protected void setValue(float fl) {
-    mValue = fl;
+  protected void setValue(int fl) {
+    mValue = fl; // this is in LSB's gotta convert to Volts ... 
     notifyListeners();
   }
 
@@ -41,6 +41,10 @@ public class AwesomeAnalogInput extends AbstractInputResource implements AnalogI
   public void release() {
     mPin.release(this);
     super.release();
+  }
+  
+  public Pin getPin() {
+    return mPin;
   }
   
 }

@@ -41,4 +41,10 @@ public class AwesomeDigitalOutput extends AbstractResource implements DigitalOut
     super.release();
   }
   
+
+  public Pin getPin() {
+    return mPin;
+  }
+  
+  
 }

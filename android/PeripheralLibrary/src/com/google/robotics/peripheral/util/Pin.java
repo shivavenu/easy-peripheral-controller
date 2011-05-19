@@ -24,7 +24,10 @@ public class Pin {
     PULSE_COUNTER (0x0100),
     QUAD_ENCODER  (0x0200),
     BUS_IO        (0x0400),
-    SERVO_DRIVER  (0x0800);
+    SERVO_DRIVER  (0x0800), 
+    UART          (0x1000), // These are to be used as virtual pins, 
+    TWI           (0x2000), // still have to come up with something to allow
+    SPI           (0x4000); // grouping pins together into functional units.
 
     private int mFlag = 0;
 
