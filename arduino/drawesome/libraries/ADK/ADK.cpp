@@ -370,17 +370,14 @@ void ADK::doTwiWrite(char opCode, int msgSize) {
 
 // initialize a servo in the array
 void ADK::doServoInit(int servo, int pin) {
-  Serial.print("servo init\n");
   _servo_array[servo].attach(pin);
 }
 
 // set a servo pulse width in the array
 void ADK::setServoPulse(int servo, unsigned int usec) {
-
   _servo_array[servo].writeMicroseconds(usec);
 }
 
 void ADK::tearDownServo(int servo) {
-  Serial.print("tear down\n");
   _servo_array[servo].detach();
 }

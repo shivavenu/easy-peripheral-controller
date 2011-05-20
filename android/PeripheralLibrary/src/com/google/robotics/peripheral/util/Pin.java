@@ -96,5 +96,8 @@ public class Pin {
     return mResources;
   }
   
+  public void releaseAll(){
+    mResources.clear();
+  }
   
 }
