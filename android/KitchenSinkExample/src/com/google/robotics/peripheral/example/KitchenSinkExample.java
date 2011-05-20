@@ -8,8 +8,6 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.hardware.usb.UsbAccessory;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 import android.view.Display;
 import android.view.MotionEvent;
@@ -18,11 +16,11 @@ import android.view.View.OnTouchListener;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.google.robotics.peripheral.connector.ConnectionListener;
-import com.google.robotics.peripheral.device.Joystick;
-import com.google.robotics.peripheral.device.LightSensor;
-import com.google.robotics.peripheral.util.ChangeListener;
-import com.google.robotics.peripheral.vendor.google.adk.DemoKit;
+import com.yggdrasil.easyperipheral.connector.ConnectionListener;
+import com.yggdrasil.easyperipheral.device.Joystick;
+import com.yggdrasil.easyperipheral.device.LightSensor;
+import com.yggdrasil.easyperipheral.util.ChangeListener;
+import com.yggdrasil.easyperipheral.vendor.google.adk.DemoKit;
 
 public class KitchenSinkExample extends Activity {
   public static final String TAG = "ServoExample";

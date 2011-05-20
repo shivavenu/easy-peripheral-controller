@@ -1,5 +1,6 @@
 package com.google.robotics.peripheral.example;
 
+import android.R;
 import android.app.Activity;
 import android.graphics.Color;
 import android.hardware.usb.UsbAccessory;
@@ -8,9 +9,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
-import com.google.robotics.peripheral.connector.AccessoryConnector;
-import com.google.robotics.peripheral.connector.ConnectionListener;
-import com.google.robotics.peripheral.vendor.google.adk.DemoKit;
+import com.yggdrasil.easyperipheral.connector.ConnectionListener;
+import com.yggdrasil.easyperipheral.vendor.google.adk.DemoKit;
 
 public class ServoExample extends Activity {
     private static final String TAG = "ServoExample";

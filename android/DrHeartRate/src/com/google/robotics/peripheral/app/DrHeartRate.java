@@ -1,12 +1,12 @@
 package com.google.robotics.peripheral.app;
 
+import android.R;
 import android.app.Activity;
 import android.hardware.usb.UsbAccessory;
 import android.os.Bundle;
 
-import com.google.robotics.peripheral.channel.TwiChannel;
-import com.google.robotics.peripheral.connector.ConnectionListener;
-import com.google.robotics.peripheral.vendor.google.drawesome.DrAwesome;
+import com.yggdrasil.easyperipheral.connector.ConnectionListener;
+import com.yggdrasil.easyperipheral.vendor.google.drawesome.DrAwesome;
 
 import java.io.IOException;
 
